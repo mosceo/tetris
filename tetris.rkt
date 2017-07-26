@@ -1,11 +1,14 @@
 #lang racket
 ;=======================================
-; TETRIS
+;
+;    TETRIS
+;
 ;=======================================
 ; A full-fledged tetris with colors.
 ;
 ; Author: Roman Kunin (mosceo@gmail.com)
 ; Source: https://github.com/mosceo/tetris
+;=======================================
 
  (require 2htdp/image)
 
@@ -13,29 +16,60 @@
 
 
 ; size of one block in pixels
-(define W 50)
-
+(define PIX 50)
 ; how oftet a tick event fires (in sec)
 (define RATE 0.25)
 
-(define (border image)
-  (define width (image-width image))
-  (define height (image-height image))
-  (define rect (rectangle width height 'outline "black"))
-  (overlay rect image))
 
 
 
-(define BLOCK (border (square W "solid" "yellow")))
+(define COLORS (list "pink" "gray"))
 
 
-(define (place-block x y scene)
-  (place-image/align BLOCK (* x W) (* y W) "left" "top" scene))
+(define P1-COLOR "pink")
+(define P2-COLOR "gray")
+
+
+
+(define-struct block [x y])
+
+
+
+
+(define (block-image color)
+  (define outline (rectangle PIX PIX 'outline "black"))
+  (define b-im (square PIX "solid" color))
+  (overlay outline b-im))
+
+
+
+(define (place-block b color scene)
+  (define x (block-x b))
+  (define y (block-y b))
+  (define b-im (block-image color))
+  (place-image/align b-im (* x PIX) (* y PIX) "left" "top" scene))
+
+
+
+
+(define CANVAS (square 300 "solid" "yellow"))
+
+
+
+;(define CANVAS2 (place-block (make-block 2 1) "pink" CANVAS))
+;(place-block (make-block 3 1) "pink" CANVAS2)
+
+
+
+
+
+
+
 
 
 
 ;=======================================
-; Data definitions
+; Game
 ;=======================================
 
 ;--------
@@ -48,7 +82,7 @@
 
 ; this wrapper will help create blocks easier
 (define (b x y)
-  (cons x y))
+  (make-block x y))
 
 
 ;--------
@@ -72,7 +106,7 @@
 ; Game ;
 ;-------
 
-(define-struct game [board piece next-piece score active?])
+(define-struct game [width height board piece next-piece score active?])
 ; A Game is a structure:
 ;   (make-game Board GamePiece Boolean)
 ; represents a state of the game with a given board, a moving piece
@@ -81,27 +115,45 @@
 
 
 
-(define IMAGE-1 'dummy)
-(define IMAGE-2 'dummy)
-(define IMAGE-3 'dummy)
-(define IMAGE-4 'dummy)
 
 ;=======================================
 ; Pieces
 ;=======================================
 
+
+
+(define (image-for-piece blocks size color)
+  (define pixels (+ 2 (* PIX size))) ;; make it a bit wider to contain the borders
+  (define scene (rectangle pixels pixels "solid" (make-color 100 100 100 0)))
+  (define im1 (place-block (list-ref blocks 0) color scene))
+  (define im2 (place-block (list-ref blocks 1) color im1))
+  (define im3 (place-block (list-ref blocks 2) color im2))
+  (define im4 (place-block (list-ref blocks 3) color im3))
+  im4)
+  
+
+
+
 ; □ ■ □  □ ■ □  □ □ □  □ ■ □
 ; ■ ■ ■  □ ■ ■  ■ ■ ■  ■ ■ □
 ; □ □ □  □ ■ □  □ ■ □  □ ■ □
-(define PIECE1 (list (list (list (b 1 0) (b 0 1) (b 1 1) (b 2 1)) IMAGE-1)
-                     (list (list (b 1 0) (b 1 1) (b 2 1) (b 1 2)) IMAGE-2)
-                     (list (list (b 0 1) (b 1 1) (b 2 1) (b 1 2)) IMAGE-3)
-                     (list (list (b 1 0) (b 0 1) (b 1 1) (b 0 2)) IMAGE-4)))
-; □ □ ■ □  □ □ □ □
-; □ □ ■ □  ■ ■ ■ ■
-; □ □ ■ □  □ □ □ □
-; □ □ ■ □  □ □ □ □
+(define P1-SIZE 3)
 
+(define P1-BLOCKS (list (list (b 1 0) (b 0 1) (b 1 1) (b 2 1))
+                        (list (b 1 0) (b 1 1) (b 2 1) (b 1 2))
+                        (list (b 0 1) (b 1 1) (b 2 1) (b 1 2))
+                        (list (b 1 0) (b 0 1) (b 1 1) (b 0 2))))
+
+
+(image-for-piece (first P1-BLOCKS) 3 "pink")
+
+
+;(define P1-IMAGES (list (image-for-piece (list-ref P1-BLOCKS 0) P1-SIZE P1-COLOR)
+;                        (image-for-piece (list-ref P1-BLOCKS 1) P1-SIZE P1-COLOR)
+;                        (image-for-piece (list-ref P1-BLOCKS 2) P1-SIZE P1-COLOR)
+;                        (image-for-piece (list-ref P1-BLOCKS 3) P1-SIZE P1-COLOR)))
+
+;(define PIECE1 (make-piece P1-BLOCKS P1-IMAGES))
 
 
 ; ■ ■
@@ -109,51 +161,9 @@
 
 
 
-; □ ■ ■  ■ □ □
-; ■ ■ □  ■ ■ □
-; □ □ □  □ ■ □
 
 
-(define PIECES (list PIECE1 PIECE1 PIECE1 PIECE1 PIECE1 PIECE1 PIECE1))
-
-
-
-
-
-
-
-
-;(empty-scene 300 300 (make-color 255 0 255 100))
-
-(define SCENE1 (square 150 150 (make-color 255 0 255 0)))
-(define SCENE2 (place-image BLOCK 75 25 SCENE1))
-(define SCENE3 (place-image BLOCK 75 75 SCENE2))
-(define SCENE4 (place-image BLOCK 75 125 SCENE3))
-(define SCENE5 (place-image BLOCK 25 125 SCENE4))
-
-(define PIECE SCENE5)
-
-
-
-
-(define CANVAS (rectangle 500 300 "solid" "pink"))
-
-
-(define CANVAS2 (place-block 0 0 CANVAS))
-(define CANVAS3 (place-block 0 1 CANVAS2))
-(define CANVAS4 (place-block 1 1 CANVAS3))
-(define CANVAS5 (place-block 2 1 CANVAS4))
-
-
-CANVAS5
-
-
-(beside BLOCK BLOCK BLOCK)
-
-
-
-
-
+;(define PIECES (list PIECE1 PIECE1 PIECE1 PIECE1 PIECE1 PIECE1 PIECE1))
 
 
 
