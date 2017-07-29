@@ -179,13 +179,20 @@
 
 (define F #f)
 
+
 ;; an example of a matrix
-(define matrix (list (list (e 0) (e F) (e F) (e F) (e F))
-                     (list (e 0) (e 1) (e F) (e F) (e F))
-                     (list (e 0) (e 1) (e 0) (e F) (e F))
-                     (list (e 0) (e 1) (e 0) (e 1) (e F))
-                     (list (e F) (e F) (e F) (e F) (e 0))
-                     (list (e F) (e F) (e F) (e 1) (e 0))))
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ ■ ■ □ □
+;; □ ■ □ □ □
+;; □ ■ □ □ ■
+(define matrix-ex-1 (list (list (e F) (e F) (e F) (e F) (e F))
+                          (list (e F) (e F) (e F) (e F) (e F))
+                          (list (e F) (e F) (e F) (e F) (e F))
+                          (list (e F) (e 1) (e 1) (e F) (e F))
+                          (list (e F) (e 1) (e F) (e F) (e F))
+                          (list (e F) (e 1) (e F) (e F) (e 0))))
+
 
 
 
@@ -237,10 +244,51 @@
 
 
 
+(matrix-image matrix-ex-1)
+
+
+
+;=======================================
+; Block and Board
+;=======================================
+
+;; check if a block can be added to a board
+(define (block-put-matrix? bl m)
+  (define entry (matrix-get m (b-x bl) (b-y bl)))
+  (false? (me-id entry)))
+
+
+;; check if a list of blocks can be added to a board
+(define (block-put-matrix*? bls m)
+  (andmap (lambda (bl) (block-put-matrix? bl m)) bls))
+
+
+(define (piece-to-blocks p)
+  (define id (piece-id p))
+  (define type (piece-type p))
+  (define raw-bls (list-list-ref PIECE-BLOCK id type))
+  (define dx (piece-x p))
+  (define dy (piece-y p))
+
+  (define bls (map (lambda (bl) (b-shift dx dy)) raw-bls))
+  
+  bls)
+
+
+
+(define (b-shift bl dx dy)
+  (b (+ (b-x bl) dx)
+     (+ (b-y bl) yx)))
+  
 
 
 
 
+
+
+
+(block-put-matrix*? (list (b 2 4) (b 3 4) (b 4 4))
+                   matrix-ex-1)
 
 
 
