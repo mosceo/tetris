@@ -1,14 +1,18 @@
+;===========================================
+;
+;   TETRIS
+;
+;===========================================
+;
+; A full-fledged colorful tetris.
+;
+; Author:  Roman Kunin (mosceo@gmail.com)
+; Source:  https://github.com/mosceo/tetris
+; License: MIT
+;
+;==========================================
+
 #lang racket
-;=======================================
-;
-;    TETRIS
-;
-;=======================================
-; A full-fledged tetris with colors.
-;
-; Author: Roman Kunin (mosceo@gmail.com)
-; Source: https://github.com/mosceo/tetris
-;=======================================
 
 (require 2htdp/image)
 (require 2htdp/universe)
@@ -19,16 +23,15 @@
 ; Constants and definitions
 ;=======================================
 
-(define PIX 50)         ; size of one block in pixels
-(define W 5)
-(define H 6)
-(define RATE (/ 1 4))   ; how often tick events fire
-
+(define W 5)          ; board width (# of blocks)
+(define H 6)          ; board height (# of blocks)
+(define PIX 50)       ; block size (pixels)
+(define RATE (/ 1 4)) ; tick event inrerval (s)
 
 (define-struct b [x y])
-; A B (Block) is ...
-; a block on the board with certain board coordinates
-; example: (cons 0 4) represents a block at (0, 4)
+; A Block is (b Number Number)
+; represents a block on the board by its coordinates
+; example: (b 1 4) represents a block at (1, 4)
 
 
 ;=======================================
@@ -63,7 +66,7 @@
 ;; ------------
 
 (define PIECE-BLOCK (list P0-BLOCK P1-BLOCK))
-(define PIECE-TYPE# (list 4 1))
+(define PIECE-TYPE (list 4 1))
 
 
 ;=======================================
@@ -85,9 +88,14 @@
   (board-place-image im x y scene))
 
 
-(define (place-block x y colid scene)
-  (define color (list-ref PIECE-COLOR colid))
+(define (place-block x y id scene)
+  (define color (list-ref PIECE-COLOR id))
   (place-block-color x y color scene))
+
+
+(define (place-blocks bls id scene)
+  (foldl (lambda (bl im) (place-block (b-x bl) (b-y bl) id im))
+         scene bls))
 
 
 (define (place-block-b-color bl color scene)
@@ -100,39 +108,22 @@
 ; Images for pieces
 ;=======================================
 
+;; [List-of B] ID Number -> Image
+;; create a transparent square board and render given blocks on it
+(define (blocks-on-square bls id size)
+  (place-blocks bls id (square size "solid" "transparent")))
 
 
+(define P0-IMAGE (list (blocks-on-square (list-ref P0-BLOCK 0) 0 P0-SIZE)
+                       (blocks-on-square (list-ref P0-BLOCK 1) 0 P0-SIZE)
+                       (blocks-on-square (list-ref P0-BLOCK 2) 0 P0-SIZE)
+                       (blocks-on-square (list-ref P0-BLOCK 3) 0 P0-SIZE)))
 
+(define P1-IMAGE (list (blocks-on-square (list-ref P1-BLOCK 0) 1 P1-SIZE)))
 
-
-(define (image-for-piece blocks size color)
-  (define pixels (+ 2 (* PIX size))) ;; make it a bit wider to contain the borders
-  (define scene (rectangle pixels pixels "solid" (make-color 100 100 100 0)))
-  (define im1 (place-block-b-color (list-ref blocks 0) color scene))
-  (define im2 (place-block-b-color (list-ref blocks 1) color im1))
-  (define im3 (place-block-b-color (list-ref blocks 2) color im2))
-  (define im4 (place-block-b-color (list-ref blocks 3) color im3))
-  im4)
-
-
-
-
-
-
-
-(define P0-IMAGE (map (lambda (bs) (image-for-piece bs P0-SIZE P0-COLOR))
-                       P0-BLOCK))
-
-
-(define P1-IMAGE (map (lambda (bs) (image-for-piece bs P1-SIZE P1-COLOR))
-                       P1-BLOCK))
-
+;; ------------
 
 (define PIECE-IMAGE (list P0-IMAGE P1-IMAGE))
-
-
-
-
 
 
 ;=======================================
@@ -151,28 +142,28 @@
 (define BACKGROUND (background-image))
 
 
-
 ;=======================================
 ; Piece
 ;=======================================
 
-;(define-struct posn [x y])
-
 (define-struct piece [id type x y])
+
 
 (define (place-piece p scene)
   (board-place-image (piece-to-image p) (piece-x p) (piece-y p) scene))
 
 
+(define (list-list-ref ll n m)
+  (list-ref (list-ref ll n) m))
+
 
 (define (piece-to-image p)
-  (define id (piece-id p))
-  (define type (piece-type p))
-  (list-ref (list-ref PIECE-IMAGE id) type))
+  (list-list-ref PIECE-IMAGE (piece-id p) (piece-type p)))
 
 
-(place-piece (piece 0 0 2 1) BACKGROUND)
 
+;; DEBUG
+;;(place-piece (piece 0 3 2 3) BACKGROUND)
 
 
 
