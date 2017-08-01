@@ -230,21 +230,9 @@
 ; Block and Board
 ;=======================================
 
-;; check if a block can be added to a board
-(define (block-put-board? bl m)
-  (define entry (board-get m (b-x bl) (b-y bl)))
+(define (board-taken? brd x y)
+  (define entry (board-get brd x y))
   (false? (entry-id entry)))
-
-
-;; check if a list of blocks can be added to a board
-(define (block-put-board*? bls m)
-  (andmap (lambda (bl) (block-put-board? bl m)) bls))
-
-
-
-(define (piece-put-board? p m)
-  (define bls (piece-to-blocks p))
-  (block-put-board*? bls m))
 
 
 
@@ -281,6 +269,67 @@
 (place-piece p1 (board-image board-ex-1))
 
 
+;=======================================
+; Block, piece and board interraction
+;=======================================
+
+(define (block-inside? bl)
+  (define x (b-x bl))
+  (define y (b-y bl))
+  (and (>= x 0) (< x W)
+       (< y H)))
+
+
+(define (block-above? bl)
+  (define y (b-y bl))
+  (< y 0))
+
+
+(define (block-collision? bl brd)
+  (define x (b-x bl))
+  (define y (b-y bl))
+  (board-taken? brd x y))
+
+
+
+
+(define (block-inside*? bls)
+  (andmap block-inside? bls))
+
+
+(define (block-above*? bls)
+  (andmap block-above? bls))
+
+
+(define (block-collision*? bls brd)
+  (andmap (lambda (bl) (block-collision? bl brd))
+          bls))
+
+
+
+
+(define (piece-inside? p)
+  (define bls (piece-to-blocks p))
+  (block-inside*? bls))
+
+
+(define (piece-above? p)
+  (define bls (piece-to-blocks p))
+  (block-above*? bls))
+
+
+(define (piece-collision? p brd)
+  (define bls (piece-to-blocks p))
+  (block-collision*? bls brd))
+
+
+
+
+
+;(define (piece-put-board? p m)
+;  (define bls (piece-to-blocks p))
+;  (block-put-board*? bls m))
+
 
 ;=======================================
 ; Game
@@ -288,23 +337,14 @@
 
 (define-struct game [board piece next-piece
                      score active?
-                     image-board])
+                     image-board
+                     counter]) ;; maybe more counters
 ; A Game is a structure:
 ;   (make-game Board Piece Piece
 ;              Number Boolean
 ;              Image)
 ; represents a state of the game with a given board, a moving piece
 ; and a boolean which defines whether the game is over
-
-
-(define (game0)
-  (make-game 8 12 (create-board 8 12) (random 6) 0 (random 6) 0 #t))
-
-
-
-
-
-
 
 
 
