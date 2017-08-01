@@ -105,25 +105,11 @@
 
 
 ;=======================================
-; Images for pieces
+; Helpers
 ;=======================================
 
-;; [List-of B] ID Number -> Image
-;; create a transparent square board and render given blocks on it
-(define (blocks-on-square bls id size)
-  (place-blocks bls id (square size "solid" "transparent")))
-
-
-(define P0-IMAGE (list (blocks-on-square (list-ref P0-BLOCK 0) 0 P0-SIZE)
-                       (blocks-on-square (list-ref P0-BLOCK 1) 0 P0-SIZE)
-                       (blocks-on-square (list-ref P0-BLOCK 2) 0 P0-SIZE)
-                       (blocks-on-square (list-ref P0-BLOCK 3) 0 P0-SIZE)))
-
-(define P1-IMAGE (list (blocks-on-square (list-ref P1-BLOCK 0) 1 P1-SIZE)))
-
-;; ------------
-
-(define PIECE-IMAGE (list P0-IMAGE P1-IMAGE))
+(define (list-list-ref ll n m)
+  (list-ref (list-ref ll n) m))
 
 
 ;=======================================
@@ -150,15 +136,8 @@
 
 
 (define (place-piece p scene)
-  (board-place-image (piece-to-image p) (piece-x p) (piece-y p) scene))
-
-
-(define (list-list-ref ll n m)
-  (list-ref (list-ref ll n) m))
-
-
-(define (piece-to-image p)
-  (list-list-ref PIECE-IMAGE (piece-id p) (piece-type p)))
+  (define bls (piece-to-valid-blocks p))
+  (place-blocks bls (piece-id p) scene))
 
 
 
@@ -168,30 +147,34 @@
 
 
 ;=======================================
-; Matrix
+; Board
 ;=======================================
 
+;;
+;; Board is a matrix of [Maybe Number 0..5]
+;;
+
 ; color is either #f or a number in 0..5
-(define-struct me [id] #:mutable #:transparent)
+(define-struct entry [id] #:mutable #:transparent)
 
 (define (e color)
-  (make-me color))
+  (make-entry color))
 
 (define F #f)
 
 
-;; an example of a matrix
+;; an example of a board
 ;; □ □ □ □ □
 ;; □ □ □ □ □
 ;; □ ■ ■ □ □
 ;; □ ■ □ □ □
 ;; □ ■ □ □ ■
-(define matrix-ex-1 (list (list (e F) (e F) (e F) (e F) (e F))
-                          (list (e F) (e F) (e F) (e F) (e F))
-                          (list (e F) (e F) (e F) (e F) (e F))
-                          (list (e F) (e 1) (e 1) (e F) (e F))
-                          (list (e F) (e 1) (e F) (e F) (e F))
-                          (list (e F) (e 1) (e F) (e F) (e 0))))
+(define board-ex-1 (list (list (e F) (e F) (e F) (e F) (e F))
+                         (list (e F) (e F) (e F) (e F) (e F))
+                         (list (e F) (e F) (e F) (e F) (e F))
+                         (list (e F) (e 1) (e 1) (e F) (e F))
+                         (list (e F) (e 1) (e F) (e F) (e F))
+                         (list (e F) (e 1) (e F) (e F) (e 0))))
 
 
 
@@ -209,38 +192,38 @@
 (check-equal? (id? 5) #t)
 
 
-;; Matrix -> Image
-;; render a matrix
-(define (matrix-image m)
+;; Board -> Image
+;; render a board
+(define (board-image m)
   (define im BACKGROUND)
   ;; [List-of [Maybe ID]] Number Image -> Image 
-  (define (matrix-row-image row j)
+  (define (board-row-image row j)
     (for ([i W] [e row])
-      (define id (me-id e))
+      (define id (entry-id e))
       (when (id? id) (set! im (place-block i j id im)))))
   (for ([j H] [row m])
-    (matrix-row-image row j))
+    (board-row-image row j))
   im)
 
 
 
 
-;; Number Number -> Matrix
-;; create an empty matrix
-(define (create-matrix w h)
+;; Number Number -> board
+;; create an empty board
+(define (create-board w h)
   (define (row _) (build-list w (lambda (_) (e #f))))
   (build-list h row))
 
-;; Matrix Number Number -> Item
-;; extract an item from matrix
-(define (matrix-get m x y)
+;; board Number Number -> Item
+;; extract an item from board
+(define (board-get m x y)
   (list-ref (list-ref m y) x))
 
-;; Matrix Number Number ID
-;; set a matrix entry
-(define (matrix-set m x y id)
-  (define item (matrix-get m x y))
-  (set-me-id! item #t))
+;; board Number Number ID
+;; set a board entry
+(define (board-set m x y id)
+  (define item (board-get m x y))
+  (set-entry-id! item #t))
 
 
 ;=======================================
@@ -248,20 +231,20 @@
 ;=======================================
 
 ;; check if a block can be added to a board
-(define (block-put-matrix? bl m)
-  (define entry (matrix-get m (b-x bl) (b-y bl)))
-  (false? (me-id entry)))
+(define (block-put-board? bl m)
+  (define entry (board-get m (b-x bl) (b-y bl)))
+  (false? (entry-id entry)))
 
 
 ;; check if a list of blocks can be added to a board
-(define (block-put-matrix*? bls m)
-  (andmap (lambda (bl) (block-put-matrix? bl m)) bls))
+(define (block-put-board*? bls m)
+  (andmap (lambda (bl) (block-put-board? bl m)) bls))
 
 
 
-(define (piece-put-matrix? p m)
+(define (piece-put-board? p m)
   (define bls (piece-to-blocks p))
-  (block-put-matrix*? bls m))
+  (block-put-board*? bls m))
 
 
 
@@ -280,27 +263,22 @@
   (map shift raw-bls))
 
 
+(define (piece-to-valid-blocks p)
+  (define bls (piece-to-blocks p))
+  (filter (lambda (bl) (>= (b-y bl) 0)) bls))
+
+
 
 (define (b-shift bl dx dy)
   (b (+ (b-x bl) dx)
      (+ (b-y bl) dy)))
-  
 
 
 
-
-
-
+;; DEBUGGING
 (define p1 (piece 0 0 2 3))
-
-(piece-put-matrix? p1 matrix-ex-1)
-
-(place-piece p1 (matrix-image matrix-ex-1))
-
-
-
-
-
+(piece-put-board? p1 board-ex-1)
+(place-piece p1 (board-image board-ex-1))
 
 
 
@@ -308,38 +286,19 @@
 ; Game
 ;=======================================
 
-
-
-;--------
-; Board ;
-;--------
-
-; A Row is a List-of-Numbers
-; a list of x-coordinates that are occupied by blocks at that row
-; example: (list 3 1 7)
-
-; A Board is a List-of-Rows
-; a list of rows represents a board, with row 0 being the topmost
-; example: (list (list)
-;                (list 0 3)
-;                (list 5 2 1))
-; this data structure represents a board of height 3, with no blocks
-; at row 0, two blocks at row 1 and three blocks at row 2
-
-
-;-------
-; Game ;
-;-------
-
-(define-struct game [width height board piece next-piece score active?])
+(define-struct game [board piece next-piece
+                     score active?
+                     image-board])
 ; A Game is a structure:
-;   (make-game Board GamePiece Boolean)
+;   (make-game Board Piece Piece
+;              Number Boolean
+;              Image)
 ; represents a state of the game with a given board, a moving piece
 ; and a boolean which defines whether the game is over
 
 
 (define (game0)
-  (make-game 8 12 (create-matrix 8 12) (random 6) 0 (random 6) 0 #t))
+  (make-game 8 12 (create-board 8 12) (random 6) 0 (random 6) 0 #t))
 
 
 
