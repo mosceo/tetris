@@ -243,11 +243,6 @@
   (set-me-id! item #t))
 
 
-
-(matrix-image matrix-ex-1)
-
-
-
 ;=======================================
 ; Block and Board
 ;=======================================
@@ -263,22 +258,32 @@
   (andmap (lambda (bl) (block-put-matrix? bl m)) bls))
 
 
-(define (piece-to-blocks p)
+
+(define (piece-put-matrix? p m)
+  (define bls (piece-to-blocks p))
+  (block-put-matrix*? bls m))
+
+
+
+(define (piece-blocks p)
   (define id (piece-id p))
   (define type (piece-type p))
-  (define raw-bls (list-list-ref PIECE-BLOCK id type))
+  (list-list-ref PIECE-BLOCK id type))
+
+
+
+(define (piece-to-blocks p)
+  (define raw-bls (piece-blocks p))
   (define dx (piece-x p))
   (define dy (piece-y p))
-
-  (define bls (map (lambda (bl) (b-shift dx dy)) raw-bls))
-  
-  bls)
+  (define (shift bl) (b-shift bl dx dy))
+  (map shift raw-bls))
 
 
 
 (define (b-shift bl dx dy)
   (b (+ (b-x bl) dx)
-     (+ (b-y bl) yx)))
+     (+ (b-y bl) dy)))
   
 
 
@@ -286,11 +291,11 @@
 
 
 
+(define p1 (piece 0 0 2 3))
 
-(block-put-matrix*? (list (b 2 4) (b 3 4) (b 4 4))
-                   matrix-ex-1)
+(piece-put-matrix? p1 matrix-ex-1)
 
-
+(place-piece p1 (matrix-image matrix-ex-1))
 
 
 
