@@ -268,8 +268,25 @@
 
 (define (piece-down p)
   (define new-y (add1 (piece-y p)))
-  (piece (piece-id p) (piece-type p)
-         (piece-x p) new-y))
+  (struct-copy piece p
+               [y new-y]))
+
+
+(define (piece-left p)
+  (define new-x (sub1 (piece-x p)))
+  (struct-copy piece p
+               [x new-x]))
+
+
+(define (piece-right p)
+  (define new-x (add1 (piece-x p)))
+  (struct-copy piece p
+               [x new-x]))
+
+
+
+
+
 
 
 ;(define (piece-left p)
@@ -340,9 +357,9 @@
 
 
 ;; DEBUGGING
-(define p1 (piece 0 0 2 3))
-(piece-collision? p1 board-ex-1)
-(place-piece p1 (board-image board-ex-1))
+;(define p1 (piece 0 0 2 3))
+;(piece-collision? p1 board-ex-1)
+;(place-piece p1 (board-image board-ex-1))
 
 
 
@@ -366,26 +383,105 @@
 
 
 (define (game-down? g)
-  (define p (game-piece g))
-  (define brd (game-board g))
-  (define new-p (piece-down p))
-  (piece-valid? new-p brd))
+  (piece-valid? (piece-down (game-piece g))
+                (game-board g)))
 
 
 (define (game-down g)
   (define p (game-piece g))
   (define new-p (piece-down p))
-  (define score (game-score g))
-  (define new-score (+ 1 score))
-  (game (game-board g) new-p (game-next-piece g)
-        new-score (game-active? g)
-        (game-counter g)))
+  (define sc (game-score g))
+  (define new-sc (+ 1 sc))
+  ;; - IN -
+  (struct-copy game g
+               [piece new-p]
+               [score new-sc]))
+
+
+(define (game-piece-above? g)
+  (piece-above? (game-piece g)))
 
 
 (define (game-over? g)
-  ...)
+  (and (not (game-down? g)) (game-piece-above? g)))
 
 
+(define (game-left? g)
+  (piece-valid? (piece-left (game-piece g))
+                (game-board g)))
+
+
+(define (game-right? g)
+  (piece-valid? (piece-right (game-piece g))
+                (game-board g)))
+
+
+(define (game-left g)
+  (struct-copy game g [piece (piece-left (game-piece g))]))
+
+
+(define (game-right g)
+  (struct-copy game g [piece (piece-right (game-piece g))]))
+
+
+
+
+(define (game-land-piece g)
+  (define p (game-piece g))
+  (define brd (game-board g))
+  (define new-brd (board-land-piece brd p))
+  (define new-brd-image (board-image new-brd))
+  ;; - IN -
+  (struct-copy game g
+               [board new-brd]
+               [image-board new-brd-image]))
+
+
+
+(define (game-new-piece g)
+  (define new-p (game-next-piece g))
+  (define new-next-piece (random-piece))
+  ;; - IN -
+  (struct-copy game g
+               [piece new-p]
+               [next-piece new-next-p]))
+
+
+
+(define (game-active-false g)
+  (struct-copy game g
+               [active #f]))
+
+
+
+
+
+
+
+
+
+(define (game-over g)
+  (game-active-false (game-land-piece g)))
+
+
+(define (game-land g)
+  (game-new-piece (game-land-piece g)))
+  
+
+
+
+
+
+(define (game-key-left g)
+  (if (game-left? g) (game-left g) g))
+
+(define (game-key-right g)
+  (if (game-right? g) (game-right g) g))
+
+(define (game-key-down g)
+  (cond [(game-down? g) (game-down g)]
+        [(game-over? g) (game-over g)]
+        [else (game-land-piece g)]))
 
 
 
