@@ -262,15 +262,24 @@
      (+ (b-y bl) dy)))
 
 
+;=======================================
+; Piece moving
+;=======================================
 
-;; DEBUGGING
-(define p1 (piece 0 0 2 3))
-(piece-put-board? p1 board-ex-1)
-(place-piece p1 (board-image board-ex-1))
+(define (piece-down p)
+  (define new-y (add1 (piece-y p)))
+  (piece (piece-id p) (piece-type p)
+         (piece-x p) new-y))
+
+
+;(define (piece-left p)
+;  ...)
+;(define (piece-right p)
+;  ...)
 
 
 ;=======================================
-; Block, piece and board interraction
+; Block, piece and board interaction
 ;=======================================
 
 (define (block-inside? bl)
@@ -288,25 +297,23 @@
 (define (block-collision? bl brd)
   (define x (b-x bl))
   (define y (b-y bl))
-  (board-taken? brd x y))
+  (not (board-taken? brd x y)))
 
-
-
+;;--------------
 
 (define (block-inside*? bls)
   (andmap block-inside? bls))
 
 
 (define (block-above*? bls)
-  (andmap block-above? bls))
+  (ormap block-above? bls))
 
 
 (define (block-collision*? bls brd)
-  (andmap (lambda (bl) (block-collision? bl brd))
+  (ormap (lambda (bl) (block-collision? bl brd))
           bls))
 
-
-
+;;--------------
 
 (define (piece-inside? p)
   (define bls (piece-to-blocks p))
@@ -323,12 +330,20 @@
   (block-collision*? bls brd))
 
 
+(define (piece-valid? p brd)
+  (and (piece-inside? p)
+       (not (piece-collision? p brd))))
+
+
+;;--------------
 
 
 
-;(define (piece-put-board? p m)
-;  (define bls (piece-to-blocks p))
-;  (block-put-board*? bls m))
+;; DEBUGGING
+(define p1 (piece 0 0 2 3))
+(piece-collision? p1 board-ex-1)
+(place-piece p1 (board-image board-ex-1))
+
 
 
 ;=======================================
@@ -350,8 +365,25 @@
 
 
 
+(define (game-down? g)
+  (define p (game-piece g))
+  (define brd (game-board g))
+  (define new-p (piece-down p))
+  (piece-valid? new-p brd))
 
 
+(define (game-down g)
+  (define p (game-piece g))
+  (define new-p (piece-down p))
+  (define score (game-score g))
+  (define new-score (+ 1 score))
+  (game (game-board g) new-p (game-next-piece g)
+        new-score (game-active? g)
+        (game-counter g)))
+
+
+(define (game-over? g)
+  ...)
 
 
 
