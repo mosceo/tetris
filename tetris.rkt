@@ -354,57 +354,70 @@
 (check-equal? (entry-id (ef)) #f)
 
 
-;;;=======================================
-;;; Row
-;;;=======================================
-;
-;(define-struct entry [id] #:mutable #:transparent)
-;
-;(define (e id)
-;  (entry id))
-;
-;(define (ef)
-;  (e #f))
-;
-;;; Example: (cons 0 (list (e F) (e 1) (e 2) (e F) (e F)))
-;
-;
-;;;
-;;; API
-;;;
-;;; row-new
-;;; rows-new
-;;; rows-replenish
-;;; rows-remove-full
-;;;
-;
-;
-;(define (row-new)
-;  (build-list W ef))
-;
-;
-;(define (rows-new n)
-;  (build-list n row-new))
-;
-;
-;(define (rows-replenish rows)
-;  (define size (length rows))
-;  (define lack (- H size))
-;  (append (rows-new lack) rows))
-;
-;
-;(define (rows-remove-full rows)
-;  (filter rows row-not-full?))
-;
-;
-;(define (row-full? row)
-;  (= (car row) W))
-;
-;
-;(define (row-not-full? row)
-;  (not (row-full? row))
-;
-;
+;;=======================================
+;; Row
+;;=======================================
+
+;; Example: (cons 2 (list (ef) (e 0) (e 1) (ef) (ef)))
+
+;;
+;; API:
+;;
+;; rows-new
+;; rows-remove-full
+;;
+
+(define (rows-new n)
+  (for/list ([i n]) (row-new)))
+
+
+(define (rows-remove-full rows)
+  (filter row-not-full? rows))
+
+
+;;
+;; Lower-level routines
+;;
+
+(define (row-new)
+  (cons 0 (for/list ([i W]) (ef))))
+
+
+(define (row-full? row)
+  (= (car row) W))
+
+
+(define (row-not-full? row)
+  (not (row-full? row)))
+
+
+(define (rows-replenish rows)
+  (define size (length rows))
+  (define lack (- H size))
+  (append (rows-new lack) rows))
+
+
+;;
+;; Unit tests
+;;
+
+(check-equal? (rows-new 2) (list (row-new) (row-new)))
+
+(check-equal? (rows-remove-full (list (cons 1 'd) (cons W 'd)  (cons W 'd) (cons 2 'd)))
+              (list (cons 1 'd) (cons 2 'd)))
+
+(check-equal? (row-new) (cons 0 (list (ef) (ef) (ef) (ef) (ef))))
+
+(check-true (row-full? (cons W 'd)))
+(check-false (row-full? (cons 1 'd)))
+
+(check-true (row-not-full? (cons 1 'd)))
+(check-false (row-not-full? (cons W 'd)))
+
+(check-equal? (rows-replenish (list (cons 1 'd) (cons 2 'd)))
+              (list (row-new) (row-new) (row-new) (row-new) (cons 1 'd) (cons 2 'd)))
+
+
 ;;;=======================================
 ;;; Board
 ;;;=======================================
