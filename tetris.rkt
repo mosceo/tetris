@@ -337,7 +337,7 @@
 
 
 (define (entry-taken? e)
-  (false? (entry-id entry)))
+  (number? (entry-id e)))
 
 
 (define (entry-set e id)
@@ -353,6 +353,13 @@
 (check-equal? (entry-id (e 1)) 1)
 (check-equal? (entry-id (ef)) #f)
 
+(check-true (entry-taken? (e 1)))
+(check-false (entry-taken? (e #f)))
+
+(local [(define e1 (e 1))]
+  (entry-set e1 2)
+  (check-equal? (entry-id e1) 2))
+
 
 ;;=======================================
 ;; Row
@@ -364,11 +371,18 @@
 ;; API:
 ;;
 ;; rows-new
+;; rows-get-entry
 ;; rows-remove-full
 ;;
 
 (define (rows-new n)
   (for/list ([i n]) (row-new)))
+
+
+(define (rows-get-entry rows x y)
+  (define row (list-ref rows y))
+  (define entries (cdr row))
+  (list-ref entries x))
 
 
 (define (rows-remove-full rows)
@@ -403,6 +417,8 @@
 
 (check-equal? (rows-new 2) (list (row-new) (row-new)))
 
+(check-equal? (rows-get-entry (list (cons 0 '(a b c)) (cons 0 '(d e g))) 2 1) 'g)
+
 (check-equal? (rows-remove-full (list (cons 1 'd) (cons W 'd)  (cons W 'd) (cons 2 'd)))
               (list (cons 1 'd) (cons 2 'd)))
 
@@ -418,95 +434,92 @@
               (list (row-new) (row-new) (row-new) (row-new) (cons 1 'd) (cons 2 'd)))
 
 
-;;;=======================================
-;;; Board
-;;;=======================================
-;
-;;; EXAMPLE #1
-;;;
-;;; □ □ □ □ □
-;;; □ □ □ □ □
-;;; □ ■ ■ □ □
-;;; □ ■ □ □ □
-;;; □ ■ □ □ ■
-;
-;(define board-ex-1 (list (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-;                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-;                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-;                         (cons 2 (list (e F) (e 1) (e 1) (e F) (e F)))
-;                         (cons 1 (list (e F) (e 1) (e F) (e F) (e F)))
-;                         (cons 2 (list (e F) (e 1) (e F) (e F) (e 0)))))
-;
-;
-;;;
-;;; API
-;;;
-;;; board-new
-;;; board-piece?
-;;; board-land
-;;; board-remove-full
-;;;
-;
-;
-;(define (board-new)
-;  (rows-new H))
-;
-;
-;(define (board-piece? brd p)
-;  (and (piece-inside? p)
-;       (not (board-piece-collision? brd p))))
-;
-;
-;(define (board-land brd p)
-;  (define id (piece-id p))
-;  (define bs (piece->visible-blocks p))
-;  (for ([b bs])
-;    (board-land-block brd b id))
-;  brd)
-;
-;
-;(define (board-remove-full brd)
-;  (rows-replenish (rows-remove-full brd)))
-;
-;
-;;;
-;;; Lower-level routines
-;;;
-;  
-;
-;(define (board-piece-collision? brd p)
-;  (define bs (piece->visible-blocks p))
-;  (board-block-collision*? brd bs))
-;
-;
-;(define (board-block-collision*? brd bs)
-;  (ormap (lambda (b) (board-block-collision? b brd)) bs))
-;
-;
-;(define (board-block-collision? brd b)
-;  (not (board-taken? brd (block-x b) (block-y b))))
-;
-;
-;(define (board-taken? brd x y)
-;  (define e (board-get brd x y))
-;  (entry-taken? e))
-;
-;
-;(define (board-land-block brd b id)
-;  (board-set brd (block-x b) (block-y b) id))
-;
-;
-;(define (board-get brd x y)
-;  (define row (list-ref brd y))
-;  (define entries (cdr row))
-;  (list-ref entries x))
-;
-;
-;(define (board-set brd x y id)
-;  (define e (board-get brd x y))
-;  (entry-set e id))
-;
-;
+;;=======================================
+;; Board
+;;=======================================
+
+;; EXAMPLE #1
+;;
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ ■ ■ □ □
+;; □ ■ □ □ □
+;; □ ■ □ □ ■
+
+(define board-ex-1 (list (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
+                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
+                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
+                         (cons 2 (list (e F) (e 1) (e 1) (e F) (e F)))
+                         (cons 1 (list (e F) (e 1) (e F) (e F) (e F)))
+                         (cons 2 (list (e F) (e 1) (e F) (e F) (e 0)))))
+
+
+;;
+;; API
+;;
+;; board-new
+;; board-piece?
+;; board-land
+;; board-remove-full
+;;
+
+
+(define (board-new)
+  (rows-new H))
+
+
+(define (board-piece? brd p)
+  (and (piece-inside? p)
+       (not (board-piece-collision? brd p))))
+
+
+(define (board-land brd p)
+  (define id (piece-id p))
+  (define bs (piece->visible-blocks p))
+  (for ([b bs]) (board-land-block brd b id))
+  brd)
+
+
+(define (board-remove-full brd)
+  (rows-replenish (rows-remove-full brd)))
+
+
+;;
+;; Lower-level routines
+;;
+  
+
+(define (board-piece-collision? brd p)
+  (define bs (piece->visible-blocks p))
+  (board-block-collision*? brd bs))
+
+
+(define (board-block-collision*? brd bs)
+  (ormap (lambda (b) (board-block-collision? b brd)) bs))
+
+
+(define (board-block-collision? brd b)
+  (not (board-taken? brd (block-x b) (block-y b))))
+
+
+(define (board-taken? brd x y)
+  (define e (board-get brd x y))
+  (entry-taken? e))
+
+
+(define (board-land-block brd b id)
+  (board-set brd (block-x b) (block-y b) id))
+
+
+(define (board-get brd x y)
+  (rows-get-entry brd x y))
+
+
+(define (board-set brd x y id)
+  (define e (board-get brd x y))
+  (entry-set e id))
+
+
 ;;;=======================================
 ;;; Game
 ;;;=======================================
