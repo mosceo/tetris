@@ -81,8 +81,7 @@
   (block (+ (block-x b) dx)
          (+ (block-y b) dy)))
 
-(check-equal? (block-shift (b 0 1) 0 0) (b 0 1))
-(check-equal? (block-shift (b 0 1) 2 -1) (b 2 0))
+(check-equal? (block-shift (b 1 2) 3 -2) (b 4 0))
 
 
 (define (block-shift* bs dx dy)
@@ -116,6 +115,7 @@
 (check-true (block-above? (b 0 -1)))
 (check-false (block-above? (b 0 0)))
 
+
 (define (block-above*? bs)
   (ormap block-above? bs))
 
@@ -136,7 +136,73 @@
   (andmap block-visible? bs))
 
 (check-true (block-visible*? (list (b 0 0) (b 0 1) (b 1 2))))
-(check-false (block-visible*? (list (b 0 0) (b 0 1) (b 0 -1))))
+(check-false (block-visible*? (list (b 0 0) (b 0 1) (b 0 1000))))
+
+
+;;=======================================
+;; Game pieces
+;;=======================================
+
+;; Piece 0
+;;
+;; □ ■ □  □ ■ □  □ □ □  □ ■ □
+;; ■ ■ ■  □ ■ ■  ■ ■ ■  ■ ■ □
+;; □ □ □  □ ■ □  □ ■ □  □ ■ □
+
+(define P0-COLOR "pink")
+(define P0-SIZE 3)
+(define P0-TYPE# 4)
+(define P0-BLOCK (list (list (b 1 0) (b 0 1) (b 1 1) (b 2 1))
+                       (list (b 1 0) (b 1 1) (b 2 1) (b 1 2))
+                       (list (b 0 1) (b 1 1) (b 2 1) (b 1 2))
+                       (list (b 1 0) (b 0 1) (b 1 1) (b 1 2))))
+
+
+;; Piece 1
+;;
+;; ■ ■
+;; ■ ■
+
+(define P1-COLOR "gray")
+(define P1-SIZE 2)
+(define P1-TYPE# 1)
+(define P1-BLOCK (list (list (b 0 0) (b 1 0) (b 0 1) (b 1 1))))
+
+
+;;
+;; Info about all pieces
+;;
+
+(define PIECE-COLOR (list P0-COLOR P1-COLOR))
+(define PIECE-BLOCK (list P0-BLOCK P1-BLOCK))
+(define PIECE-TYPE# (list P0-TYPE# P1-TYPE#))
+
+
+;;
+;; API
+;;
+;; global-piece-color
+;; global-piece-blocks
+;; global-piece-type#
+;;
+
+
+(define (global-piece-color id)
+  (list-ref PIECE-COLOR id))
+
+(check-equal? (global-piece-color 1) P1-COLOR)
+
+
+(define (global-piece-blocks id type)
+  (matrix-ref PIECE-BLOCK id type))
+
+(check-equal? (global-piece-blocks 0 2) (list (b 0 1) (b 1 1) (b 2 1) (b 1 2)))
+
+
+(define (global-piece-type# id)
+  (list-ref PIECE-TYPE# id))
+
+(check-equal? (global-piece-type# 1) 1)
 
 
 ;;;=======================================
@@ -163,7 +229,7 @@
 ;
 ;(define (piece-new)
 ;  (define id (random PIECE#))
-;  (define type# (list-ref PIECE-TYPE id))
+;  (define type# (list-ref PIECE-TYPE# id))
 ;  (define type (random type#))
 ;  (piece id type 0 0))
 ;
@@ -189,26 +255,20 @@
 ;(define (piece-rotate p)
 ;  (define id (piece-id p))
 ;  (define type (piece-type p))
-;  (define type# (list-ref PIECE-TYPE id))
+;  (define type# (list-ref PIECE-TYPE# id))
 ;  (define new-type (modulo (add1 type) type#))
 ;  (struct-copy piece p
 ;               [type new-type]))
 ;
 ;
 ;(define (piece-inside? p)
-;  (define bls (piece-to-blocks p))
+;  (define bls (piece->blocks p))
 ;  (block-inside*? bls))
 ;
 ;
 ;(define (piece-above? p)
-;  (define bls (piece-to-blocks p))
+;  (define bls (piece->blocks p))
 ;  (block-above*? bls))
-;
-;
-;(define (piece->raw-blocks p)
-;  (define id (piece-id p))
-;  (define type (piece-type p))
-;  (matrix-ref PIECE-BLOCK id type))
 ;
 ;
 ;(define (piece->blocks p)
@@ -221,6 +281,17 @@
 ;  (filter block-visible? bs))
 ;
 ;
+;;;
+;;; Lower-level routines
+;;;
+;
+;
+;(define (piece->raw-blocks p)
+;  (define id (piece-id p))
+;  (define type (piece-type p))
+;  (matrix-ref PIECE-BLOCK id type))
+
+
 ;;;=======================================
 ;;; Entry
 ;;;=======================================
