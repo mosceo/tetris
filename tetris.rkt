@@ -64,17 +64,40 @@
 (define (b x y)
   (block x y))
 
+
 ;;
 ;; API
 ;;
 ;; block-shift
+;; block-inside?
+;; block-above?
+;; block-inside*?
+;; block-above*?
 ;;
 
-(define (block-shift bl dx dy)
-  (b (+ (block-x bl) dx)
-     (+ (block-y bl) dy)))
+
+(define (block-shift b dx dy)
+  (block (+ (block-x b) dx)
+         (+ (block-y b) dy)))
 
 
+(define (block-inside? b)
+  (define x (block-x b))
+  (define y (block-y b))
+  (and (>= x 0) (< x W)
+       (< y H)))
+
+
+(define (block-above? b)
+  (< (block-y b) 0))
+
+
+(define (block-inside*? bls)
+  (andmap block-inside? bls))
+
+
+(define (block-above*? bls)
+  (ormap block-above? bls))
 
 
 
@@ -96,6 +119,8 @@
 ;; piece-inside?
 ;; piece-above?
 ;;
+;; piece->blocks
+;; piece->visible-blocks
 
 (define (piece-new)
   (define id (random PIECE#))
@@ -140,9 +165,12 @@
   (define bls (piece-to-blocks p))
   (block-above*? bls))
 
-;;
-;; Lower-level routines
-;;
+
+(define (piece->blocks p)
+  (define id (piece-id p))
+  (define type (piece-type p))
+  (list-list-ref PIECE-BLOCK id type))
+
 
 (define (piece->blocks p)
   (define raw-bls (piece-blocks p))
@@ -157,38 +185,103 @@
   (filter (lambda (bl) (>= (b-y bl) 0)) bls))
 
 
+;;=======================================
+;; Entry
+;;=======================================
 
-;=======================================
-; Board
-;=======================================
-
-;; Board is a matrix of [Maybe Number 0..5]
-
-; color is either #f or a number in 0..5
 (define-struct entry [id] #:mutable #:transparent)
+
 
 ;;
 ;; API
 ;;
-;; board-new
-;; board-piece-valid?
-;; board-land-piece
-;; board-x
-;; board-x
-;; board-x
+;; entry-new    (ef)
+;; entry-new-id (e)
+;; entry-taken?
 ;;
 
 
-(define (e color)
-  (entry color))
+(define (entry-new)
+  (entry #f))
 
 
-;; an example of a board
+(define (ef)
+  (e #f))
+
+
+(define (entry-new-id id)
+  (entry id))
+
+
+(define (e id)
+  (entry-new-id id))
+
+
+(define (entry-taken? e)
+  (false? (e-id entry)))
+
+
+
+
+;;=======================================
+;; Row
+;;=======================================
+
+(define-struct entry [id] #:mutable #:transparent)
+
+(define (e id)
+  (entry id))
+
+(define (ef)
+  (e #f))
+
+;; Example: (cons 0 (list (e F) (e 1) (e 2) (e F) (e F)))
+
+
+;;
+;; API
+;;
+;; row-new
+;; rows-new
+;; rows-replenish
+;; rows-remove-full
+;;
+
+(define (row-new)
+  (build-list W ef))
+
+
+(define (rows-new n)
+  (build-list n row-new))
+
+
+(define (rows-replenish rows)
+  (define size (length rows))
+  (define lack (- H size))
+  (append (rows-new lack) rows))
+
+
+(define (rows-remove-full rows)
+  (for/list ([row rows] #:when (not (row-full? row)))
+    row))
+
+
+(define (row-full? row)
+  (= (car row) W))
+
+
+;;=======================================
+;; Board
+;;=======================================
+
+;; EXAMPLE #1
+;;
 ;; □ □ □ □ □
 ;; □ □ □ □ □
 ;; □ ■ ■ □ □
 ;; □ ■ □ □ □
 ;; □ ■ □ □ ■
+
 (define board-ex-1 (list (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
                          (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
                          (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
@@ -197,109 +290,73 @@
                          (cons 2 (list (e F) (e 1) (e F) (e F) (e 0)))))
 
 
+;;
+;; API
+;;
+;; board-new
+;; board-piece?
+;; board-land
+;; board-remove-full
+;;
 
 
-;; Number Number -> board
-;; create an empty board
-(define (board-new w h)
-  (define (row _) (build-list w (lambda (_) (e #f))))
-  (build-list h row))
-
-;; board Number Number -> Item
-;; extract an item from board
-(define (board-get m x y)
-  (list-ref (list-ref m y) x))
-
-;; board Number Number ID
-;; set a board entry
-(define (board-set m x y id)
-  (define item (board-get m x y))
-  (set-entry-id! item #t))
+(define (board-new)
+  (rows-new H))
 
 
-
-(define (board-taken? brd x y)
-  (define entry (board-get brd x y))
-  (false? (entry-id entry)))
-
-
-
-(define (piece->blocks p)
-  (define id (piece-id p))
-  (define type (piece-type p))
-  (list-list-ref PIECE-BLOCK id type))
-
-
-
-
-
-(define (block-inside? bl)
-  (define x (b-x bl))
-  (define y (b-y bl))
-  (and (>= x 0) (< x W)
-       (< y H)))
-
-
-(define (block-above? bl)
-  (define y (b-y bl))
-  (< y 0))
-
-
-(define (block-collision? bl brd)
-  (define x (b-x bl))
-  (define y (b-y bl))
-  (not (board-taken? brd x y)))
-
-;;--------------
-
-(define (block-inside*? bls)
-  (andmap block-inside? bls))
-
-
-(define (block-above*? bls)
-  (ormap block-above? bls))
-
-
-(define (block-collision*? bls brd)
-  (ormap (lambda (bl) (block-collision? bl brd))
-          bls))
-
-;;--------------
-
-
-
-(define (piece-collision? p brd)
-  (define bls (piece-to-blocks p))
-  (block-collision*? bls brd))
-
-
-(define (piece-valid? p brd)
+(define (board-piece? brd p)
   (and (piece-inside? p)
-       (not (piece-collision? p brd))))
+       (not (board-piece-collision? brd p))))
 
 
+(define (board-land brd p)
+  (define id (piece-id p))
+  (define bs (piece->visible-blocks p))
+  (for ([b bs])
+    (board-land-block brd b id))
+  brd)
 
 
-
-
-
-
+(define (board-remove-full brd)
+  (rows-replenish (rows-remove-full brd)))
 
 
 ;;
 ;; Lower-level routines
 ;;
+  
+
+(define (board-piece-collision? brd p)
+  (define bs (piece->visible-blocks p))
+  (board-block-collision*? brd bs))
 
 
+(define (board-block-collision*? brd bs)
+  (ormap (lambda (b) (board-block-collision? b brd)) bs))
 
 
+(define (block-collision? brd b)
+  (not (board-taken? brd (block-x b) (block-y b))))
 
 
+(define (board-taken? brd x y)
+  (define e (board-get brd x y))
+  (entry-taken? e))
 
 
+(define (board-land-block brd b id)
+  (board-set brd (block-x b) (block-y b) id))
 
 
+(define (board-get brd x y)
+  (define row (list-ref brd y))
+  (define entries (cdr rows))
+  (list-ref entries x))
 
+
+(define (board-set brd x y id)
+  (define e (board-get brd x y))
+  (set-entry-id! e id))
 
 
 ;;=======================================
@@ -394,7 +451,7 @@
 (define (game-land-piece g)
   (define p (game-piece g))
   (define brd (game-board g))
-  (define new-brd (board-land-piece brd p))
+  (define new-brd (board-land brd p))
   (define new-p (game-next-piece g))
   (define new-next-p (piece-new g))
   ;; - IN -
