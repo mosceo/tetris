@@ -4,13 +4,13 @@
 ;;
 ;;===========================================
 ;;
-;; A full-fledged colorful tetris.
+;; A colorful version of tetris.
 ;;
 ;; Author:  Roman Kunin (mosceo@gmail.com)
 ;; Source:  https://github.com/mosceo/tetris
 ;; License: MIT
 ;;
-;;==========================================
+;;===========================================
 
 #lang racket
 
@@ -19,15 +19,15 @@
 (require rackunit)
 
 
-;=======================================
-; Global constants
-;=======================================
+;;=======================================
+;; Global constants
+;;=======================================
 
-(define W 5)          ; board width (# of blocks)
-(define H 6)          ; board height (# of blocks)
-(define PIX 50)       ; block size (pixels)
-(define RATE 1.0)     ; tick event inrerval (s)
-(define PIECE# 2)     ; number of pieces
+(define W 5)          ;; board width (# of blocks)
+(define H 6)          ;; board height (# of blocks)
+(define PIX 50)       ;; block size (pixels)
+(define RATE 1.0)     ;; tick event inrerval (s)
+(define PIECE# 2)     ;; number of pieces
 
 
 ;;=======================================
@@ -59,7 +59,7 @@
 
 
 ;;
-;; API
+;; API:
 ;;
 ;; block-shift
 ;; block-shift*
@@ -117,7 +117,6 @@
 ;;
 
 (check-equal? (block-shift (b 1 2) 3 -2) (b 4 0))
-
 (check-equal? (block-shift* (list (b 0 1) (b 2 5)) 1 -2) (list (b 1 -1) (b 3 3)))
 
 (check-true (block-inside? (b 0 0)))
@@ -181,7 +180,7 @@
 
 
 ;;
-;; API
+;; API:
 ;;
 ;; global-piece-color
 ;; global-piece-blocks
@@ -205,9 +204,7 @@
 ;;
 
 (check-equal? (global-piece-color 1) P1-COLOR)
-
 (check-equal? (global-piece-blocks 0 2) (list (b 0 1) (b 1 1) (b 2 1) (b 1 2)))
-
 (check-equal? (global-piece-type# 1) 1)
 
 
@@ -219,7 +216,7 @@
 
 
 ;;
-;; API
+;; API:
 ;;
 ;; piece-new
 ;; piece-left
@@ -297,9 +294,7 @@
 (check-pred piece? (piece-new))
 
 (check-equal? (piece-left (piece 0 0 2 5)) (piece 0 0 1 5))
-
 (check-equal? (piece-right (piece 0 0 2 5)) (piece 0 0 3 5))
-
 (check-equal? (piece-down (piece 0 0 2 5)) (piece 0 0 2 6))
 
 (check-equal? (piece-rotate (piece 0 0 2 5)) (piece 0 1 2 5))
@@ -325,7 +320,7 @@
 
 
 ;;
-;; API
+;; API:
 ;;
 ;; e
 ;; ef
