@@ -34,8 +34,6 @@
 ;; Helpers
 ;;=======================================
 
-(define F #f)
-
 (define (matrix-ref mat row col)
   (list-ref (list-ref mat row) col))
 
@@ -365,15 +363,28 @@
 ;; Row
 ;;=======================================
 
-;; Example: (cons 2 (list (ef) (e 0) (e 1) (ef) (ef)))
+(define-struct row [count entries] #:mutable #:transparent)
+
+
+;; Example: (row 2 (list (ef) (e 0) (e 1) (ef) (ef)))
 
 ;;
 ;; API:
 ;;
+;; row-set
 ;; rows-new
 ;; rows-get-entry
 ;; rows-remove-full
 ;;
+
+(define (row-set row x id)
+  (define count (row-count row))
+  (define new-count (add1 count))
+  (define entries (row-entries row))
+  (define entry (list-ref entries x))
+  (entry-set entry id)
+  (set-row-count! new-count))
+
 
 (define (rows-new n)
   (for/list ([i n]) (row-new)))
@@ -394,19 +405,19 @@
 ;;
 
 (define (row-new)
-  (cons 0 (for/list ([i W]) (ef))))
+  (row 0 (for/list ([i W]) (ef))))
 
 
-(define (row-full? row)
-  (= (car row) W))
+(define (row-full? r)
+  (= (row-count r) W))
 
 
 (define (row-not-full? row)
   (not (row-full? row)))
 
 
-(define (rows-replenish rows)
-  (define size (length rows))
+(define (rows-replenish rs)
+  (define size (length rs))
   (define lack (- H size))
   (append (rows-new lack) rows))
 
@@ -441,21 +452,23 @@
 ;; EXAMPLE #1
 ;;
 ;; □ □ □ □ □
-;; □ □ □ □ □
+;; □ □ □ □ ■
 ;; □ ■ ■ □ □
 ;; □ ■ □ □ □
-;; □ ■ □ □ ■
+;; ■ ■ ■ ■ ■
+;; □ ■ □ □ □
 
-(define board-ex-1 (list (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-                         (cons 0 (list (e F) (e F) (e F) (e F) (e F)))
-                         (cons 2 (list (e F) (e 1) (e 1) (e F) (e F)))
-                         (cons 1 (list (e F) (e 1) (e F) (e F) (e F)))
-                         (cons 2 (list (e F) (e 1) (e F) (e F) (e 0)))))
+(define board-ex-1 (list (cons 0 (list (ef)  (ef)  (ef)  (ef)  (ef)))
+                         (cons 0 (list (ef)  (ef)  (ef)  (ef)  (e 0)))
+                         (cons 0 (list (ef)  (ef)  (ef)  (ef)  (ef)))
+                         (cons 0 (list (ef)  (e 0) (e 0) (ef)  (ef)))
+                         (cons 2 (list (ef)  (e 1) (ef)  (ef)  (ef)))
+                         (cons 1 (list (e 1) (e 1) (e 0) (e 0) (e 1)))
+                         (cons 2 (list (ef)  (e 1) (ef)  (ef)  (ef)))))
 
 
 ;;
-;; API
+;; API:
 ;;
 ;; board-new
 ;; board-piece?
@@ -487,7 +500,6 @@
 ;;
 ;; Lower-level routines
 ;;
-  
 
 (define (board-piece-collision? brd p)
   (define bs (piece->visible-blocks p))
@@ -502,22 +514,81 @@
   (not (board-taken? brd (block-x b) (block-y b))))
 
 
+(define (board-land-block brd b id)
+  (define row (list-ref brd (block-y)))
+  (row-set row (block-x b) id))
+
+
+  
+  (board-set brd (block-x b) (block-y b) id))
+
+;
 (define (board-taken? brd x y)
   (define e (board-get brd x y))
   (entry-taken? e))
 
-
-(define (board-land-block brd b id)
-  (board-set brd (block-x b) (block-y b) id))
-
-
+;
 (define (board-get brd x y)
   (rows-get-entry brd x y))
 
-
+;
 (define (board-set brd x y id)
   (define e (board-get brd x y))
   (entry-set e id))
+
+
+;;
+;; Unit tests
+;;
+
+(check-pred list? (board-new))
+
+; board-piece?
+;(check-true (board-piece? board-ex-1 (piece 0 0 0 0)))
+
+; board-land
+
+; board-remove-full
+
+
+
+
+;(check-false (board-piece-collision? board-ex-1 (piece 0 0 0 -1)))
+
+
+
+
+
+
+
+
+
+
+(local [(define b1 (list (cons 0 (list (ef) (ef) (ef)))
+                         (cons 0 (list (ef) (ef) (ef)))
+                         (cons 0 (list (ef) (ef) (ef)))))
+        (define b2 (list (cons 0 (list (ef) (ef)  (ef)))
+                         (cons 0 (list (ef) (ef)  (ef)))
+                         (cons 1 (list (ef) (e 0) (ef)))))]
+  (board-land-block b1 (block 1 2) 0)
+  (check-equal? b1 b2))
+
+
+
+
+
+(check-true (board-taken? board-ex-1 4 1))
+(check-false (board-taken? board-ex-1 4 2))
+
+
+
+(check-equal? (board-get board-ex-1 4 1) (entry 0))
+(check-equal? (board-get board-ex-1 4 2) (entry #f))
+
+(local [(define b1 (board-new))]
+  (board-set b1 2 3 1)
+  (check-equal? (board-get b1 2 3) (entry 1)))
+
 
 
 ;;;=======================================
@@ -529,7 +600,7 @@
 ;
 ;
 ;;;
-;;; API
+;;; API:
 ;;;
 ;;; game-new
 ;;; game-active?
