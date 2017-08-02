@@ -317,46 +317,48 @@
 (check-equal? (piece->blocks (piece 1 0 3 5)) (list (b 3 5) (b 4 5) (b 3 6) (b 4 6)))
 
 
-;;;=======================================
-;;; Entry
-;;;=======================================
-;
-;(define-struct entry [id] #:mutable #:transparent)
-;
-;
-;;;
-;;; API
-;;;
-;;; entry-new    (ef)
-;;; entry-new-id (e)
-;;; entry-taken?
-;;;
-;
-;
-;(define (entry-new)
-;  (entry #f))
-;
-;
-;(define (ef)
-;  (e #f))
-;
-;
-;(define (entry-new-id id)
-;  (entry id))
-;
-;
-;(define (e id)
-;  (entry-new-id id))
-;
-;
-;(define (entry-taken? e)
-;  (false? (e-id entry)))
-;
-;
-;(define (entry-set e id)
-;  (set-entry-id! e id))
-;
-;
+;;=======================================
+;; Entry
+;;=======================================
+
+(define-struct entry [id] #:mutable #:transparent)
+
+
+;;
+;; API
+;;
+;; e
+;; ef
+;; entry-taken?
+;; entry-set
+;;
+
+(define (e id)
+  (entry id))
+
+
+(define (ef)
+  (e #f))
+
+
+(define (entry-taken? e)
+  (false? (entry-id entry)))
+
+
+(define (entry-set e id)
+  (set-entry-id! e id))
+
+
+;;
+;; Unit tests
+;;
+
+(check-pred entry? (e 1))
+(check-pred entry? (ef))
+(check-equal? (entry-id (e 1)) 1)
+(check-equal? (entry-id (ef)) #f)
+
+
 ;;;=======================================
 ;;; Row
 ;;;=======================================
