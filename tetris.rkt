@@ -71,23 +71,17 @@
 ;; block-visible*?
 ;;
 
-
 ;; NOTE: the meaning of function that work with lists differ,
 ;;       block-inside*? needs all blocks be inside,
 ;;       when block-above*? needs only one block be above
-
 
 (define (block-shift b dx dy)
   (block (+ (block-x b) dx)
          (+ (block-y b) dy)))
 
-(check-equal? (block-shift (b 1 2) 3 -2) (b 4 0))
-
 
 (define (block-shift* bs dx dy)
   (map (lambda (b) (block-shift b dx dy)) bs))
-
-(check-equal? (block-shift* (list (b 0 1) (b 2 5)) 1 -2) (list (b 1 -1) (b 3 3)))
 
 
 (define (block-inside? b)
@@ -96,44 +90,53 @@
   (and (>= x 0) (< x W)
        (< y H)))
 
-(check-true (block-inside? (b 0 0)))
-(check-true (block-inside? (b 0 -5)))
-(check-false (block-inside? (b -1 0)))
-(check-false (block-inside? (b 0 1000)))
-
 
 (define (block-inside*? bs)
   (andmap block-inside? bs))
-
-(check-true (block-inside*? (list (b 0 0) (b 0 -1) (b 1 2))))
-(check-false (block-inside*? (list (b 0 0) (b 0 -1) (b -1 2))))
 
 
 (define (block-above? b)
   (< (block-y b) 0))
 
-(check-true (block-above? (b 0 -1)))
-(check-false (block-above? (b 0 0)))
-
 
 (define (block-above*? bs)
   (ormap block-above? bs))
-
-(check-true (block-above*? (list (b 0 0) (b 0 1) (b 0 -1))))
-(check-false (block-above*? (list (b 0 0) (b 0 1) (b 1 2))))
 
 
 (define (block-visible? b)
   (and (block-inside? b)
        (not (block-above? b))))
 
-(check-true (block-visible? (b 0 0)))
-(check-false (block-visible? (b 0 -1)))
-(check-false (block-visible? (b -1 0)))
-
 
 (define (block-visible*? bs)
   (andmap block-visible? bs))
+
+
+;;
+;; Unit tests
+;;
+
+(check-equal? (block-shift (b 1 2) 3 -2) (b 4 0))
+
+(check-equal? (block-shift* (list (b 0 1) (b 2 5)) 1 -2) (list (b 1 -1) (b 3 3)))
+
+(check-true (block-inside? (b 0 0)))
+(check-true (block-inside? (b 0 -5)))
+(check-false (block-inside? (b -1 0)))
+(check-false (block-inside? (b 0 1000)))
+
+(check-true (block-inside*? (list (b 0 0) (b 0 -1) (b 1 2))))
+(check-false (block-inside*? (list (b 0 0) (b 0 -1) (b -1 2))))
+
+(check-true (block-above? (b 0 -1)))
+(check-false (block-above? (b 0 0)))
+
+(check-true (block-above*? (list (b 0 0) (b 0 1) (b 0 -1))))
+(check-false (block-above*? (list (b 0 0) (b 0 1) (b 1 2))))
+
+(check-true (block-visible? (b 0 0)))
+(check-false (block-visible? (b 0 -1)))
+(check-false (block-visible? (b -1 0)))
 
 (check-true (block-visible*? (list (b 0 0) (b 0 1) (b 1 2))))
 (check-false (block-visible*? (list (b 0 0) (b 0 1) (b 0 1000))))
@@ -157,7 +160,6 @@
                        (list (b 0 1) (b 1 1) (b 2 1) (b 1 2))
                        (list (b 1 0) (b 0 1) (b 1 1) (b 1 2))))
 
-
 ;; Piece 1
 ;;
 ;; ■ ■
@@ -170,7 +172,7 @@
 
 
 ;;
-;; Info about all pieces
+;; All data in one place
 ;;
 
 (define PIECE-COLOR (list P0-COLOR P1-COLOR))
@@ -186,110 +188,133 @@
 ;; global-piece-type#
 ;;
 
-
 (define (global-piece-color id)
   (list-ref PIECE-COLOR id))
-
-(check-equal? (global-piece-color 1) P1-COLOR)
 
 
 (define (global-piece-blocks id type)
   (matrix-ref PIECE-BLOCK id type))
 
-(check-equal? (global-piece-blocks 0 2) (list (b 0 1) (b 1 1) (b 2 1) (b 1 2)))
-
 
 (define (global-piece-type# id)
   (list-ref PIECE-TYPE# id))
 
+
+;;
+;; Unit tests
+;;
+
+(check-equal? (global-piece-color 1) P1-COLOR)
+
+(check-equal? (global-piece-blocks 0 2) (list (b 0 1) (b 1 1) (b 2 1) (b 1 2)))
+
 (check-equal? (global-piece-type# 1) 1)
 
 
-;;;=======================================
-;;; Piece
-;;;=======================================
-;
-;(define-struct piece [id type x y])
-;
-;;;
-;;; API
-;;;
-;;; piece-new
-;;; piece-left
-;;; piece-right
-;;; piece-down
-;;; piece-rotate
-;;;
-;;; piece-inside?
-;;; piece-above?
-;;;
-;;; piece->blocks
-;;; piece->visible-blocks
-;;;
-;
-;(define (piece-new)
-;  (define id (random PIECE#))
-;  (define type# (list-ref PIECE-TYPE# id))
-;  (define type (random type#))
-;  (piece id type 0 0))
-;
-;
-;(define (piece-left p)
-;  (define new-x (sub1 (piece-x p)))
-;  (struct-copy piece p
-;               [x new-x]))
-;
-;
-;(define (piece-right p)
-;  (define new-x (add1 (piece-x p)))
-;  (struct-copy piece p
-;               [x new-x]))
-;
-;
-;(define (piece-down p)
-;  (define new-y (add1 (piece-y p)))
-;  (struct-copy piece p
-;               [y new-y]))
-;
-;
-;(define (piece-rotate p)
-;  (define id (piece-id p))
-;  (define type (piece-type p))
-;  (define type# (list-ref PIECE-TYPE# id))
-;  (define new-type (modulo (add1 type) type#))
-;  (struct-copy piece p
-;               [type new-type]))
-;
-;
-;(define (piece-inside? p)
-;  (define bls (piece->blocks p))
-;  (block-inside*? bls))
-;
-;
-;(define (piece-above? p)
-;  (define bls (piece->blocks p))
-;  (block-above*? bls))
-;
-;
-;(define (piece->blocks p)
-;  (define raw-bs (piece->raw-blocks p))
-;  (block-shift* raw-bs (piece-x p) (piece-y p)))
-;
-;
-;(define (piece->visible-blocks p)
-;  (define bs (piece->blocks p))
-;  (filter block-visible? bs))
-;
-;
-;;;
-;;; Lower-level routines
-;;;
-;
-;
-;(define (piece->raw-blocks p)
-;  (define id (piece-id p))
-;  (define type (piece-type p))
-;  (matrix-ref PIECE-BLOCK id type))
+;;=======================================
+;; Piece
+;;=======================================
+
+(define-struct piece [id type x y] #:transparent)
+
+
+;;
+;; API
+;;
+;; piece-new
+;; piece-left
+;; piece-right
+;; piece-down
+;; piece-rotate
+;;
+;; piece-inside?
+;; piece-above?
+;;
+;; piece->blocks
+;; piece->visible-blocks
+;;
+
+(define (piece-new)
+  (define id (random PIECE#))
+  (define type# (global-piece-type# id))
+  (define type (random type#))
+  (piece id type 0 0))
+
+
+(define (piece-left p)
+  (define new-x (sub1 (piece-x p)))
+  (struct-copy piece p [x new-x]))
+
+
+(define (piece-right p)
+  (define new-x (add1 (piece-x p)))
+  (struct-copy piece p [x new-x]))
+
+
+(define (piece-down p)
+  (define new-y (add1 (piece-y p)))
+  (struct-copy piece p [y new-y]))
+
+
+(define (piece-rotate p)
+  (define id (piece-id p))
+  (define type (piece-type p))
+  (define type# (global-piece-type# id))
+  (define new-type (modulo (add1 type) type#))
+  (struct-copy piece p [type new-type]))
+
+
+(define (piece-inside? p)
+  (block-inside*? (piece->blocks p)))
+
+
+(define (piece-above? p)
+  (block-above*? (piece->blocks p)))
+
+
+(define (piece->blocks p)
+  (define raw-bs (piece->raw-blocks p))
+  (block-shift* raw-bs (piece-x p) (piece-y p)))
+
+
+(define (piece->visible-blocks p)
+  (define bs (piece->blocks p))
+  (filter block-visible? bs))
+
+
+;;
+;; Lower-level routines
+;;
+
+(define (piece->raw-blocks p)
+  (global-piece-blocks (piece-id p) (piece-type p)))
+
+
+;;
+;; Unit tests
+;;
+
+(check-pred piece? (piece-new))
+
+(check-equal? (piece-left (piece 0 0 2 5)) (piece 0 0 1 5))
+
+(check-equal? (piece-right (piece 0 0 2 5)) (piece 0 0 3 5))
+
+(check-equal? (piece-down (piece 0 0 2 5)) (piece 0 0 2 6))
+
+(check-equal? (piece-rotate (piece 0 0 2 5)) (piece 0 1 2 5))
+(check-equal? (piece-rotate (piece 0 3 2 5)) (piece 0 0 2 5))
+(check-equal? (piece-rotate (piece 1 0 2 5)) (piece 1 0 2 5))
+
+(check-true (piece-inside? (piece 0 0 0 0)))
+(check-true (piece-inside? (piece 0 1 -1 -2)))
+(check-false (piece-inside? (piece 0 1 -2 -2)))
+
+(check-false (piece-above? (piece 0 2 0 -1)))
+(check-true (piece-above? (piece 0 2 0 -2)))
+
+(check-equal? (piece->blocks (piece 0 2 3 5)) (list (b 3 6) (b 4 6) (b 5 6) (b 4 7)))
+(check-equal? (piece->blocks (piece 1 0 3 5)) (list (b 3 5) (b 4 5) (b 3 6) (b 4 6)))
 
 
 ;;;=======================================
