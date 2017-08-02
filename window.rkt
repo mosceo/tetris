@@ -88,6 +88,34 @@
 
 
 
+
+
+
+
+
+;; Board -> Image
+;; render a board
+(define (board-image m)
+  (define im BACKGROUND)
+  ;; [List-of [Maybe ID]] Number Image -> Image 
+  (define (board-row-image row j)
+    (for ([i W] [e row])
+      (define id (entry-id e))
+      (when (id? id) (set! im (place-block i j id im)))))
+  (for ([j H] [row m])
+    (board-row-image row j))
+  im)
+
+
+
+
+
+
+
+
+
+
+
 ;=======================================
 ; Background
 ;=======================================
