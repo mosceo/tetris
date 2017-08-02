@@ -284,15 +284,13 @@
                [x new-x]))
 
 
-
-
-
-
-
-;(define (piece-left p)
-;  ...)
-;(define (piece-right p)
-;  ...)
+(define (piece-rotate p)
+  (define id (piece-id p))
+  (define type (piece-type p))
+  (define type# (list-ref PIECE-TYPE id))
+  (define new-type (modulo (add1 type) type#))
+  (struct-copy piece p
+               [type new-type]))
 
 
 ;=======================================
@@ -368,13 +366,10 @@
 ;=======================================
 
 (define-struct game [board piece next-piece
-                     score active?
-                     image-board
-                     counter]) ;; maybe more counters
+                     score active?])
 ; A Game is a structure:
 ;   (make-game Board Piece Piece
-;              Number Boolean
-;              Image)
+;              Number Boolean)
 ; represents a state of the game with a given board, a moving piece
 ; and a boolean which defines whether the game is over
 
@@ -382,61 +377,6 @@
 ;=======================================
 ; Game, low-level functions
 ;=======================================
-
-
-(define (game-down? g)
-  (piece-valid? (piece-down (game-piece g))
-                (game-board g)))
-
-
-(define (game-down g)
-  (define p (game-piece g))
-  (define new-p (piece-down p))
-  (define sc (game-score g))
-  (define new-sc (+ 1 sc))
-  ;; - IN -
-  (struct-copy game g
-               [piece new-p]
-               [score new-sc]))
-
-
-(define (game-piece-above? g)
-  (piece-above? (game-piece g)))
-
-
-(define (game-over? g)
-  (and (not (game-down? g)) (game-piece-above? g)))
-
-
-(define (game-left? g)
-  (piece-valid? (piece-left (game-piece g))
-                (game-board g)))
-
-
-(define (game-right? g)
-  (piece-valid? (piece-right (game-piece g))
-                (game-board g)))
-
-
-(define (game-left g)
-  (struct-copy game g [piece (piece-left (game-piece g))]))
-
-
-(define (game-right g)
-  (struct-copy game g [piece (piece-right (game-piece g))]))
-
-
-
-
-(define (game-land-piece g)
-  (define p (game-piece g))
-  (define brd (game-board g))
-  (define new-brd (board-land-piece brd p))
-  (define new-brd-image (board-image new-brd))
-  ;; - IN -
-  (struct-copy game g
-               [board new-brd]
-               [image-board new-brd-image]))
 
 
 
@@ -456,38 +396,157 @@
 
 
 
-
-
-
 ;=======================================
-; Game, higher-level functions
+;=======================================
+;=======================================
+;=======================================
+;=======================================
 ;=======================================
 
 
-(define (game-over g)
-  (game-active-false (game-land-piece g)))
+;=====
+; API
+;=====
+;
+; Window works with a Game object using this API
+;
+; (game-new)
+; (game-active? g)
+; (game-score   g)
+;
+; (game-left    g)
+; (game-right   g)
+; (game-rotate  g)
+;
+; (game-down-tick g)
+; (game-down-key  g)
+; (game-fall    g)    *
 
 
-(define (game-land g)
-  (game-new-piece (game-land-piece g)))
-
-;;-------------
-
-(define (game-key-left g)
-  (if (game-left? g) (game-left g) g))
+;; API
+(define (game-new)
+  (game [(board-new) (piece-new) (piece-new) 0 #t]))
 
 
-(define (game-key-right g)
-  (if (game-right? g) (game-right g) g))
 
 
-(define (game-key-down g)
-  (cond [(game-down? g) (game-down g)]
-        [(game-over? g) (game-over g)]
+
+
+(define (change-piece g fun)
+  (define p (game-piece g))
+  (define new-p (fun p))
+  (define brd (game-board p))
+  (if (piece-valid? new-p brd)
+      (struct-copy game g [piece new-p]) g))
+
+;; API
+(define (game-left g)
+  (change-piece g piece-left))
+
+;; API
+(define (game-right g)
+  (change-piece g piece-right))
+
+;; API
+(define (game-rotate g)
+  (change-piece g piece-rotate))
+
+
+
+
+
+
+
+
+
+(define (game-move-down? g)
+  (piece-valid? (piece-down (game-piece g))
+                (game-board g)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+(define (game-down g rew)
+  (cond [(game-move-down? g) (game-move-down g rew)]
         [else (game-land g)]))
 
 
+  
+  (define p (game-piece g))
+  (define new-p (piece-down p))
+  (define sc (game-score g))
+  (define new-sc (+ sc rew))
+  ;; - IN -
+  (struct-copy game g
+               [piece new-p]
+               [score new-sc]))
 
+
+
+
+
+
+
+
+
+
+(define (game-piece-above? g)
+  (piece-above? (game-piece g)))
+
+
+
+
+
+
+
+(define (game-land-piece g)
+  (define p (game-piece g))
+  (define brd (game-board g))
+  (define new-brd (board-land-piece brd p))
+  (define new-p (game-next-piece g))
+  (define new-next-p (piece-new g))
+  ;; - IN -
+  (struct-copy game g
+               [board new-brd]
+               [piece new-p]
+               [next-piece new-next-p]))
+
+
+
+(define (game-over g)
+  (struct-copy game g
+               [active #f]))
+
+
+
+(define (game-land g)
+  (cond [(game-piece-above? g) (game-over g)]
+        [else (game-land-piece g)]))
+
+
+
+  
+
+
+;; API
+(define (game-down-tick g)
+  (game-down g 1))
+
+
+;; API
+(define (game-down-key g)
+  (game-down g 2))
+
+  
 
 
 
@@ -496,12 +555,42 @@
 ; Window
 ;=======================================
 
-(define-struct window [game image])
+(define-struct window [game])
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;=======================================
+; Big-bang
+;=======================================
+
+(big-bang (window (game-new))
+ [on-tick window-tick (/ 1 10)]
+ [on-key  window-key]
+ [to-draw window-draw])
 
 
 
