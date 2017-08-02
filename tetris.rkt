@@ -135,15 +135,46 @@
 (define-struct piece [id type x y])
 
 
-(define (place-piece p scene)
-  (define bls (piece-to-valid-blocks p))
-  (place-blocks bls (piece-id p) scene))
+(define (piece-new)
+  (define id (random 2))
+  (define type# (list-ref PIECE-TYPE id))
+  (define type (random type#))
+  (piece id type 0 0))
 
 
+(define (piece-down p)
+  (define new-y (add1 (piece-y p)))
+  (struct-copy piece p
+               [y new-y]))
 
-;; DEBUG
-;;(place-piece (piece 0 3 2 3) BACKGROUND)
 
+(define (piece-left p)
+  (define new-x (sub1 (piece-x p)))
+  (struct-copy piece p
+               [x new-x]))
+
+
+(define (piece-right p)
+  (define new-x (add1 (piece-x p)))
+  (struct-copy piece p
+               [x new-x]))
+
+
+(define (piece-rotate p)
+  (define id (piece-id p))
+  (define type (piece-type p))
+  (define type# (list-ref PIECE-TYPE id))
+  (define new-type (modulo (add1 type) type#))
+  (struct-copy piece p
+               [type new-type]))
+
+
+;;
+;; DRAWING
+;;
+(define (piece-draw/scene p scene)
+  (define bls (piece->valid-blocks p))
+  (blocks-draw/scene bls (piece-id p) scene))
 
 
 ;=======================================
@@ -263,37 +294,6 @@
 
 
 ;=======================================
-; Piece moving
-;=======================================
-
-(define (piece-down p)
-  (define new-y (add1 (piece-y p)))
-  (struct-copy piece p
-               [y new-y]))
-
-
-(define (piece-left p)
-  (define new-x (sub1 (piece-x p)))
-  (struct-copy piece p
-               [x new-x]))
-
-
-(define (piece-right p)
-  (define new-x (add1 (piece-x p)))
-  (struct-copy piece p
-               [x new-x]))
-
-
-(define (piece-rotate p)
-  (define id (piece-id p))
-  (define type (piece-type p))
-  (define type# (list-ref PIECE-TYPE id))
-  (define new-type (modulo (add1 type) type#))
-  (struct-copy piece p
-               [type new-type]))
-
-
-;=======================================
 ; Block, piece and board interaction
 ;=======================================
 
@@ -370,38 +370,11 @@
 ; A Game is a structure:
 ;   (make-game Board Piece Piece
 ;              Number Boolean)
+; board - board,
+; piece - current piece
+; next-piece - next piece
 ; represents a state of the game with a given board, a moving piece
 ; and a boolean which defines whether the game is over
-
-
-;=======================================
-; Game, low-level functions
-;=======================================
-
-
-
-(define (game-new-piece g)
-  (define new-p (game-next-piece g))
-  (define new-next-piece (random-piece))
-  ;; - IN -
-  (struct-copy game g
-               [piece new-p]
-               [next-piece new-next-p]))
-
-
-
-(define (game-active-false g)
-  (struct-copy game g
-               [active #f]))
-
-
-
-;=======================================
-;=======================================
-;=======================================
-;=======================================
-;=======================================
-;=======================================
 
 
 ;=====
@@ -423,6 +396,32 @@
 ; (game-fall    g)    *
 
 
+
+
+
+
+(define (game-new-piece g)
+  (define new-p (game-next-piece g))
+  (define new-next-piece (random-piece))
+  ;; - IN -
+  (struct-copy game g
+               [piece new-p]
+               [next-piece new-next-p]))
+
+
+
+
+;=======================================
+;=======================================
+;=======================================
+;=======================================
+;=======================================
+;=======================================
+
+
+
+
+
 ;; API
 (define (game-new)
   (game [(board-new) (piece-new) (piece-new) 0 #t]))
@@ -431,7 +430,7 @@
 
 
 
-
+;; Game Function -> Game
 (define (change-piece g fun)
   (define p (game-piece g))
   (define new-p (fun p))
@@ -555,7 +554,7 @@
 ; Window
 ;=======================================
 
-(define-struct window [game])
+(define-struct window [game counter-main counter th ])
 
 
 
