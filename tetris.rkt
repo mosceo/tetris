@@ -154,6 +154,7 @@
 (define P0-COLOR "pink")
 (define P0-SIZE 3)
 (define P0-TYPE# 4)
+(define P0-SHIFT (list (b 0 0) (b -1 0) (b 0 -1) (b 0 0)))
 (define P0-BLOCK (list (list (b 1 0) (b 0 1) (b 1 1) (b 2 1))
                        (list (b 1 0) (b 1 1) (b 2 1) (b 1 2))
                        (list (b 0 1) (b 1 1) (b 2 1) (b 1 2))
@@ -167,6 +168,7 @@
 (define P1-COLOR "gray")
 (define P1-SIZE 2)
 (define P1-TYPE# 1)
+(define P1-SHIFT (list (b 0 0)))
 (define P1-BLOCK (list (list (b 0 0) (b 1 0) (b 0 1) (b 1 1))))
 
 
@@ -177,6 +179,8 @@
 (define PIECE-COLOR (list P0-COLOR P1-COLOR))
 (define PIECE-BLOCK (list P0-BLOCK P1-BLOCK))
 (define PIECE-TYPE# (list P0-TYPE# P1-TYPE#))
+(define PIECE-SHIFT (list P0-SHIFT P1-SHIFT))
+(define PIECE-SIZE  (list P0-SIZE  P1-SIZE))
 
 
 ;;
@@ -197,6 +201,14 @@
 
 (define (global-piece-type# id)
   (list-ref PIECE-TYPE# id))
+
+
+(define (global-piece-shift id type)
+  (matrix-ref PIECE-SHIFT id type))
+
+
+(define (global-piece-size id)
+  (list-ref PIECE-SIZE id))
 
 
 ;;
@@ -773,7 +785,7 @@
 
 
 (define (window-draw w)
-  (image-render-game (window-game w)))
+  (image-render-window w))
 
 
 ;;
@@ -783,19 +795,27 @@
 (check-pred window? (window-new))
 
 
-;=======================================
-; Drawing images
-;=======================================
 
-(define (image-render-game g)
+;;=======================================
+;; Big-bang
+;;=======================================
+
+(define (start-game)
+  (big-bang (window-new)
+            [on-tick window-tick 1]
+            [on-key  window-key]
+            [to-draw window-draw]))
+
+
+;;=======================================
+;; Drawing images
+;;=======================================
+
+(define (image-board-piece g)
   (define p (game-piece g))
   (define brd (game-board g))
   (define brd-image (board->image brd))
   (image-piece/scene p brd-image))
-
-
-
-
 
 
 (define (background-image)
@@ -829,63 +849,54 @@
          scene bs))
 
 
-;(define (place-block-b-color bl color scene)
-;  (define x (b-x bl))
-;  (define y (b-y bl))
-;  (place-block-color x y color scene))
-
-
 (define (image-piece/scene p scene)
   (define bs (piece->visible-blocks p))
   (image-block*/scene bs (piece-id p) scene))
 
 
-
-;(image-piece/scene (piece 0 1 1 3) BACKGROUND)
-
-
 (define (board->image brd)
   (define im BACKGROUND)
-  
   (define (row->image es y)
     (for ([x W] [e es])
       (when (entry-taken? e) (set! im (image-block/scene x y (entry-id e) im)))))
-
+  ;; --IN--
   (for ([y H] [row brd])
     (row->image (row-entries row) y))
-
   im)
 
 
-;(board->image board-ex-1)
-;(board->image board-ex-2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ;;=======================================
-;; Big-bang
+;; Drawing Window
 ;;=======================================
 
-(big-bang (window-new)
- [on-tick window-tick 1]
- [on-key  window-key]
- [to-draw window-draw])
+(define (image-render-window w)
+  (define g (window-game w))
+  (define board-piece (image-board-piece g))
+  (define score-display (image-render-score (game-score g)))
+  (beside board-piece score-display))
+
+
+(define (image-render-score sc)
+  (define rect1 (rectangle 110 50 'solid 'black))
+  (define rect2 (rectangle 100 40 'solid 'white))
+  (define txt (text (number->string sc) 20 "black"))
+  (overlay txt rect2 rect1))
+
+
+;(define (image-render-next-piece g)
+;  ...)
+
+
+(define (image-render-piece p)
+  (define shift (global-piece-shift p))
+
+
+(start-game)
+
+
+
+
+
 
 
 
