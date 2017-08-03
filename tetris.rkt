@@ -235,7 +235,7 @@
   (define id (random PIECE#))
   (define type# (global-piece-type# id))
   (define type (random type#))
-  (piece id type 0 0))
+  (piece id type 0 -4))
 
 
 (define (piece-left p)
@@ -655,7 +655,7 @@
 ;;
 
 (define (game-new)
-  (game [(board-new) (piece-new) (piece-new) 0 #t]))
+  (game (board-new) (piece-new) (piece-new) 0 #t))
 
 
 (define (game-left g)
@@ -735,7 +735,135 @@
 ;; Window
 ;;=======================================
 
-;(define-struct window [game counter])
+(define-struct window [game counter])
+
+
+(define (window-new)
+  (window (game-new) 0))
+
+
+(define (window-tick w)
+  (define new-g (game-down-tick (window-game w)))
+  (define new-c (add1 (window-counter w)))
+  (window new-g new-c))
+
+
+(define (window-key w k)
+  (cond [(key=? k "left") (window-key-left w)]
+        [(key=? k "right") (window-key-right w)]
+        [(key=? k "up") (window-key-up w)]
+        [(key=? k "down") (window-key-down w)]
+        [else w]))
+
+
+(define (window-key-left w)
+  (struct-copy window w [game (game-left (window-game w))]))
+
+
+(define (window-key-right w)
+  (struct-copy window w [game (game-right (window-game w))]))
+
+
+(define (window-key-up w)
+  (struct-copy window w [game (game-rotate (window-game w))]))
+
+
+(define (window-key-down w)
+  (struct-copy window w [game (game-down-key (window-game w))]))
+
+
+(define (window-draw w)
+  (image-render-game (window-game w)))
+
+
+;;
+;; Unit tests
+;;
+
+(check-pred window? (window-new))
+
+
+;=======================================
+; Drawing images
+;=======================================
+
+(define (image-render-game g)
+  (define p (game-piece g))
+  (define brd (game-board g))
+  (define brd-image (board->image brd))
+  (image-piece/scene p brd-image))
+
+
+
+
+
+
+(define (background-image)
+  (define col1 (rectangle PIX (* PIX H) "solid" "LightGoldenrodYellow"))
+  (define col2 (rectangle PIX (* PIX H) "solid" "PaleGoldenrod"))
+  (define cols (build-list W (lambda (n) (if (= (modulo n 2) 0) col1 col2))))
+  (apply beside cols))
+
+
+(define BACKGROUND (background-image))
+
+
+(define (image-block color)
+  (define outline (square PIX 'outline "black"))
+  (define sq (square PIX "solid" color))
+  (overlay outline sq))
+
+
+(define (image-image/scene im x y scene)
+  (underlay/xy scene (* x PIX) (* y PIX) im))
+
+
+(define (image-block/scene x y id scene)
+  (define color (global-piece-color id))
+  (define b-im (image-block color))
+  (image-image/scene b-im x y scene))
+
+
+(define (image-block*/scene bs id scene)
+  (foldl (lambda (b im) (image-block/scene (block-x b) (block-y b) id im))
+         scene bs))
+
+
+;(define (place-block-b-color bl color scene)
+;  (define x (b-x bl))
+;  (define y (b-y bl))
+;  (place-block-color x y color scene))
+
+
+(define (image-piece/scene p scene)
+  (define bs (piece->visible-blocks p))
+  (image-block*/scene bs (piece-id p) scene))
+
+
+
+;(image-piece/scene (piece 0 1 1 3) BACKGROUND)
+
+
+(define (board->image brd)
+  (define im BACKGROUND)
+  
+  (define (row->image es y)
+    (for ([x W] [e es])
+      (when (entry-taken? e) (set! im (image-block/scene x y (entry-id e) im)))))
+
+  (for ([y H] [row brd])
+    (row->image (row-entries row) y))
+
+  im)
+
+
+;(board->image board-ex-1)
+;(board->image board-ex-2)
+
+
+
+
+
 
 
 
@@ -754,10 +882,10 @@
 ;; Big-bang
 ;;=======================================
 
-;(big-bang (window (game-new))
-; [on-tick window-tick (/ 1 10)]
-; [on-key  window-key]
-; [to-draw window-draw])
+(big-bang (window-new)
+ [on-tick window-tick 1]
+ [on-key  window-key]
+ [to-draw window-draw])
 
 
 
