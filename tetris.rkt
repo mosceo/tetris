@@ -865,15 +865,82 @@
   im)
 
 
+
+;;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;; RENDERING NEXT PIECE
+
+
+(define (min-x bs)
+  (apply min (map block-x bs)))
+(define (min-y bs)
+  (apply min (map block-y bs)))
+(define (max-x bs)
+  (apply max (map block-x bs)))
+(define (max-y bs)
+  (apply max (map block-y bs)))
+
+(check-equal? (min-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 1) 
+(check-equal? (min-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 10) 
+(check-equal? (max-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 4)
+(check-equal? (max-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 30)
+
+
+(define (shift-top-left bs)
+  (block-shift* bs (- (min-x bs)) (- (min-y bs))))
+
+(check-equal? (shift-top-left (list (b 1 2) (b 1 3) (b 1 4) (b 2 3)))
+              (list (b 0 0) (b 0 1) (b 0 2) (b 1 1)))
+
+
+(define (image-render-next-piece id type)
+  (define raw-bs (global-piece-blocks id type))
+  (define bs (shift-top-left raw-bs))
+  (define w (add1 (max-x bs)))
+  (define h (add1 (max-y bs)))
+  (define scene (rectangle (* PIX w) (* PIX h) "solid" "transparent"))
+  (image-block*/scene bs id scene))
+
+(image-render-next-piece 0 0)
+(image-render-next-piece 0 1)
+(image-render-next-piece 0 2)
+(image-render-next-piece 0 3)
+
+
+
+
+
+
+
+;;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 ;;=======================================
 ;; Drawing Window
 ;;=======================================
 
 (define (image-render-window w)
+  (define right-panel (image-render-right-panel w))
+  
+  (define board-piece-img (image-board-piece (window-game w)))
+
+  (beside/align "top" board-piece-img right-panel))
+
+
+(define (image-render-right-panel w)
   (define g (window-game w))
-  (define board-piece (image-board-piece g))
-  (define score-display (image-render-score (game-score g)))
-  (beside board-piece score-display))
+  (define np (game-next-piece g))
+  (define score-img (image-render-score (game-score g)))
+  (define piece-img (image-render-next-piece (piece-id np) (piece-type np)))
+
+  (define pad (square 20 "solid" "transparent"))
+  (define w--w (rectangle (* PIX 5) 1 "solid" "transparent"))
+  (define score-and-piece (above score-img pad piece-img w--w))
+
+  score-and-piece)
+  
 
 
 (define (image-render-score sc)
@@ -886,9 +953,6 @@
 ;(define (image-render-next-piece g)
 ;  ...)
 
-
-(define (image-render-piece p)
-  (define shift (global-piece-shift p))
 
 
 (start-game)
