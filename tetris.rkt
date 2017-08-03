@@ -34,6 +34,8 @@
 ;; Helpers
 ;;=======================================
 
+(define F #f)
+
 (define (matrix-ref mat row col)
   (list-ref (list-ref mat row) col))
 
@@ -373,31 +375,28 @@
 ;;
 ;; row-set
 ;; rows-new
-;; rows-get-entry
+;; rows-entry
 ;; rows-remove-full
 ;;
 
-(define (row-set row x id)
-  (define count (row-count row))
-  (define new-count (add1 count))
-  (define entries (row-entries row))
-  (define entry (list-ref entries x))
+(define (row-set r x id)
+  (define new-count (add1 (row-count r)))
+  (define entry (list-ref (row-entries r) x))
   (entry-set entry id)
-  (set-row-count! new-count))
+  (set-row-count! r new-count))
 
 
 (define (rows-new n)
   (for/list ([i n]) (row-new)))
 
 
-(define (rows-get-entry rows x y)
-  (define row (list-ref rows y))
-  (define entries (cdr row))
-  (list-ref entries x))
+(define (rows-entry rs x y)
+  (define r (list-ref rs y))
+  (list-ref (row-entries r) x))
 
 
-(define (rows-remove-full rows)
-  (filter row-not-full? rows))
+(define (rows-remove-full rs)
+  (filter row-not-full? rs))
 
 
 ;;
@@ -417,54 +416,80 @@
 
 
 (define (rows-replenish rs)
-  (define size (length rs))
-  (define lack (- H size))
-  (append (rows-new lack) rows))
+  (define lack (- H (length rs)))
+  (append (rows-new lack) rs))
 
 
 ;;
 ;; Unit tests
 ;;
 
+(local [(define r1 (row 1 (list (e 0) (ef) (ef))))
+        (define r2 (row 2 (list (e 0) (ef) (e 1))))]
+  (row-set r1 2 1)
+  (check-equal? r1 r2))
+
 (check-equal? (rows-new 2) (list (row-new) (row-new)))
 
-(check-equal? (rows-get-entry (list (cons 0 '(a b c)) (cons 0 '(d e g))) 2 1) 'g)
+(check-equal? (rows-entry (list (row 0 '(a b c)) (row 0 '(d e g))) 0 0) 'a)
+(check-equal? (rows-entry (list (row 0 '(a b c)) (row 0 '(d e g))) 2 1) 'g)
 
-(check-equal? (rows-remove-full (list (cons 1 'd) (cons W 'd)  (cons W 'd) (cons 2 'd)))
-              (list (cons 1 'd) (cons 2 'd)))
+(check-equal? (rows-remove-full (list (row 1 'd) (row W 'd)  (row W 'd) (row 2 'd)))
+              (list (row 1 'd) (row 2 'd)))
 
-(check-equal? (row-new) (cons 0 (list (ef) (ef) (ef) (ef) (ef))))
+(check-equal? (row-new) (row 0 (list (ef) (ef) (ef) (ef) (ef))))
 
-(check-true (row-full? (cons W 'd)))
-(check-false (row-full? (cons 1 'd)))
+(check-true (row-full? (row W 'd)))
+(check-false (row-full? (row 1 'd)))
 
-(check-true (row-not-full? (cons 1 'd)))
-(check-false (row-not-full? (cons W 'd)))
+(check-true (row-not-full? (row 1 'd)))
+(check-false (row-not-full? (row W 'd)))
 
-(check-equal? (rows-replenish (list (cons 1 'd) (cons 2 'd)))
-              (list (row-new) (row-new) (row-new) (row-new) (cons 1 'd) (cons 2 'd)))
+(check-equal? (rows-replenish (list (row 1 'd) (row 2 'd)))
+              (list (row-new) (row-new) (row-new) (row-new) (row 1 'd) (row 2 'd)))
 
 
 ;;=======================================
 ;; Board
 ;;=======================================
 
+(define (cr count vals)
+  (row count (map (lambda (val) (entry val)) vals)))
+
+(check-equal? (cr 2 (list 0 F F 1)) (row 2 (list (e 0) (ef) (ef) (e 1))))
+
+ 
 ;; EXAMPLE #1
 ;;
 ;; □ □ □ □ □
 ;; □ □ □ □ ■
-;; □ ■ ■ □ □
-;; □ ■ □ □ □
-;; ■ ■ ■ ■ ■
+;; ■ ■ ■ □ ■
+;; ■ ■ □ □ □
+;; ■ ■ ■ □ ■
 ;; □ ■ □ □ □
 
-(define board-ex-1 (list (cons 0 (list (ef)  (ef)  (ef)  (ef)  (ef)))
-                         (cons 0 (list (ef)  (ef)  (ef)  (ef)  (e 0)))
-                         (cons 0 (list (ef)  (ef)  (ef)  (ef)  (ef)))
-                         (cons 0 (list (ef)  (e 0) (e 0) (ef)  (ef)))
-                         (cons 2 (list (ef)  (e 1) (ef)  (ef)  (ef)))
-                         (cons 1 (list (e 1) (e 1) (e 0) (e 0) (e 1)))
-                         (cons 2 (list (ef)  (e 1) (ef)  (ef)  (ef)))))
+(define board-ex-1 (list (cr 0 (list F F F F F))
+                         (cr 1 (list F F F F 1))
+                         (cr 4 (list 0 0 1 F 1))
+                         (cr 2 (list 0 0 F F F))
+                         (cr 4 (list 1 1 1 F 0))
+                         (cr 1 (list F 1 F F F))))
+
+;; EXAMPLE #2
+;;
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ ■
+;; ■ ■ □ ■ ■
+;; □ ■ □ □ □
+
+(define board-ex-2 (list (cr 0 (list F F F F F))
+                         (cr 0 (list F F F F F))
+                         (cr 0 (list F F F F F))
+                         (cr 1 (list F F F F 1))
+                         (cr 4 (list 0 0 F 0 0))
+                         (cr 1 (list F 1 F F F))))
 
 
 ;;
@@ -487,10 +512,9 @@
 
 
 (define (board-land brd p)
-  (define id (piece-id p))
   (define bs (piece->visible-blocks p))
-  (for ([b bs]) (board-land-block brd b id))
-  brd)
+  (board-land-block* brd bs (piece-id p))
+  (board-remove-full brd))
 
 
 (define (board-remove-full brd)
@@ -507,34 +531,35 @@
 
 
 (define (board-block-collision*? brd bs)
-  (ormap (lambda (b) (board-block-collision? b brd)) bs))
+  (ormap (lambda (b) (board-block-collision? brd b)) bs))
 
 
 (define (board-block-collision? brd b)
-  (not (board-taken? brd (block-x b) (block-y b))))
+  (board-taken? brd (block-x b) (block-y b)))
+
+
+(define (board-land-block* brd bs id)
+  (for ([b bs]) (board-land-block brd b id))
+  brd)
 
 
 (define (board-land-block brd b id)
-  (define row (list-ref brd (block-y)))
+  (define row (list-ref brd (block-y b)))
   (row-set row (block-x b) id))
 
 
-  
-  (board-set brd (block-x b) (block-y b) id))
-
-;
 (define (board-taken? brd x y)
   (define e (board-get brd x y))
   (entry-taken? e))
 
-;
-(define (board-get brd x y)
-  (rows-get-entry brd x y))
 
-;
+(define (board-get brd x y)
+  (rows-entry brd x y))
+
+
 (define (board-set brd x y id)
-  (define e (board-get brd x y))
-  (entry-set e id))
+  (define row (list-ref brd y))
+  (row-set row x id))
 
 
 ;;
@@ -543,52 +568,60 @@
 
 (check-pred list? (board-new))
 
-; board-piece?
-;(check-true (board-piece? board-ex-1 (piece 0 0 0 0)))
+(check-true (board-piece? board-ex-1 (piece 1 0 0 0)))
+(check-true (board-piece? board-ex-1 (piece 0 1 2 2)))
+(check-false (board-piece? board-ex-1 (piece 1 0 -1 0)))
+(check-false (board-piece? board-ex-1 (piece 0 1 2 3)))
 
-; board-land
+(local [(define b1 (list (cr 0 (list F F F F F))
+                         (cr 1 (list F F F F 1))
+                         (cr 4 (list 0 0 1 F 1))
+                         (cr 2 (list 0 0 F F F))
+                         (cr 4 (list 1 1 1 F 0))
+                         (cr 1 (list F 1 F F F))))
+        (define b2 (board-land b1 (piece 0 1 2 2)))]
+  (check-equal? b2 board-ex-2))
 
-; board-remove-full
+;; board-remove-full will be implicitely tested while testing board-land
 
+(check-false (board-piece-collision? board-ex-1 (piece 0 1 2 2)))
+(check-true (board-piece-collision? board-ex-1 (piece 0 1 2 3)))
+(check-false (board-piece-collision? board-ex-1 (piece 1 0 2 0)))
+(check-true (board-piece-collision? board-ex-1 (piece 1 0 3 0)))
 
+(check-true (board-block-collision*? board-ex-1 (list (b 3 2) (b 4 2) (b 3 3))))
+(check-false (board-block-collision*? board-ex-1 (list (b 3 2) (b 3 3))))
 
+(check-true (board-block-collision? board-ex-1 (b 4 2)))
+(check-false (board-block-collision? board-ex-1 (b 3 2)))
 
-;(check-false (board-piece-collision? board-ex-1 (piece 0 0 0 -1)))
-
-
-
-
-
-
-
-
-
-
-(local [(define b1 (list (cons 0 (list (ef) (ef) (ef)))
-                         (cons 0 (list (ef) (ef) (ef)))
-                         (cons 0 (list (ef) (ef) (ef)))))
-        (define b2 (list (cons 0 (list (ef) (ef)  (ef)))
-                         (cons 0 (list (ef) (ef)  (ef)))
-                         (cons 1 (list (ef) (e 0) (ef)))))]
-  (board-land-block b1 (block 1 2) 0)
+(local [(define b1 (list (cr 1 (list F 1 F))
+                         (cr 1 (list 0 F F))))
+        (define b2 (list (cr 2 (list F 1 0))
+                         (cr 2 (list 0 0 F))))]
+  (board-land-block* b1 (list (b 2 0) (b 1 1)) 0)
   (check-equal? b1 b2))
 
 
-
-
+(local [(define b1 (list (cr 1 (list F 1 F))
+                         (cr 1 (list 0 F F))))
+        (define b2 (list (cr 1 (list F 1 F))
+                         (cr 2 (list 0 F 0))))]
+  (board-land-block b1 (b 2 1) 0)
+  (check-equal? b1 b2))
 
 (check-true (board-taken? board-ex-1 4 1))
-(check-false (board-taken? board-ex-1 4 2))
+(check-false (board-taken? board-ex-1 3 1))
 
+(check-equal? (board-get board-ex-1 4 1) (entry 1))
+(check-equal? (board-get board-ex-1 3 1) (entry #f))
 
-
-(check-equal? (board-get board-ex-1 4 1) (entry 0))
-(check-equal? (board-get board-ex-1 4 2) (entry #f))
-
-(local [(define b1 (board-new))]
-  (board-set b1 2 3 1)
-  (check-equal? (board-get b1 2 3) (entry 1)))
-
+(local [(define b1 (list (cr 1 (list F 1 F))
+                         (cr 1 (list 0 F F))))
+        (define b2 (list (cr 1 (list F 1 F))
+                         (cr 2 (list 0 F 0))))]
+  (board-set b1 2 1 0)
+  (check-equal? b1 b2))
 
 
 ;;;=======================================
