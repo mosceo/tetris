@@ -613,9 +613,9 @@
   (image-render-window w))
 
 
-;;
-;; Routines
-;;
+;;----------;;
+;; Routines ;;
+;;----------;;
 
 (define (window-game-over? w)
   (game-over? (window-game w)))
@@ -736,15 +736,24 @@
 ;; Drawing Window
 ;;=======================================
 
+
+
+
+
+(define GAME-OVER-TEXT (above (text "Press \"space\"" 20 "black")
+                              (text "to start a new game" 20 "black")))
+
+
+
 (define (image-render-window w)
-  (define right-panel (image-render-right-panel w))
+  (define rpanel-img (image-render-rpanel w))
   
-  (define board-piece-img (image-board-piece (window-game w)))
+  (define borpic-img (image-board-piece (window-game w)))
 
-  (beside/align "top" board-piece-img right-panel))
+  (beside/align "top" borpic-img rpanel-img))
 
 
-(define (image-render-right-panel w)
+(define (image-render-rpanel w)
   (define g (window-game w))
   (define np (game-next-piece g))
   (define score-img (image-render-score (game-score g)))
@@ -752,10 +761,10 @@
 
   (define pad (square 20 "solid" "transparent"))
   (define w--w (rectangle (* PIX 5) 1 "solid" "transparent"))
-  (define score-and-piece (above score-img pad piece-img w--w))
 
-  score-and-piece)
   
+  (if (window-game-over? w) (above score-img pad piece-img w--w)
+      (above score-img pad piece-img pad GAME-OVER-TEXT w--w)))
 
 
 (define (image-render-score sc)
