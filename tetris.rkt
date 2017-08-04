@@ -202,9 +202,7 @@
 
 (define (piece-new)
   (define id (random PIECE#))
-  (define type# (global-piece-type# id))
-  (define type (random type#))
-  (piece id type 0 -4))
+  (piece id 0 0 -4))
 
 
 (define (piece-left p)
