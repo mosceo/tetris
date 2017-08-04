@@ -250,6 +250,7 @@
 ;; piece-new
 ;; piece-left
 ;; piece-right
+;; piece-down-n
 ;; piece-down
 ;; piece-rotate
 ;;
@@ -261,6 +262,7 @@
 ;;
 ;; piece-width
 ;; piece-height
+;;
 ;;
 
 (define (piece-new)
@@ -279,9 +281,13 @@
   (struct-copy piece p [x new-x]))
 
 
-(define (piece-down p)
-  (define new-y (add1 (piece-y p)))
+(define (piece-down-n p dy)
+  (define new-y (+ (piece-y p) dy))
   (struct-copy piece p [y new-y]))
+
+
+(define (piece-down p)
+  (piece-down-n p 1))
 
 
 (define (piece-rotate p)
@@ -435,45 +441,6 @@
 ;; Board
 ;;=======================================
 
-(define (cr count vals)
-  (row count (map (lambda (val) (entry val)) vals)))
-
-(check-equal? (cr 2 (list 0 F F 1)) (row 2 (list (e 0) (ef) (ef) (e 1))))
-
- 
-;; EXAMPLE #1
-;;
-;; □ □ □ □ □
-;; □ □ □ □ ■
-;; ■ ■ ■ □ ■
-;; ■ ■ □ □ □
-;; ■ ■ ■ □ ■
-;; □ ■ □ □ □
-
-(define board-ex-1 (list (cr 0 (list F F F F F))
-                         (cr 1 (list F F F F 1))
-                         (cr 4 (list 0 0 1 F 1))
-                         (cr 2 (list 0 0 F F F))
-                         (cr 4 (list 1 1 1 F 0))
-                         (cr 1 (list F 1 F F F))))
-
-;; EXAMPLE #2
-;;
-;; □ □ □ □ □
-;; □ □ □ □ □
-;; □ □ □ □ □
-;; □ □ □ □ ■
-;; ■ ■ □ ■ ■
-;; □ ■ □ □ □
-
-(define board-ex-2 (list (cr 0 (list F F F F F))
-                         (cr 0 (list F F F F F))
-                         (cr 0 (list F F F F F))
-                         (cr 1 (list F F F F 1))
-                         (cr 4 (list 0 0 F 0 0))
-                         (cr 1 (list F 1 F F F))))
-
-
 ;;
 ;; API:
 ;;
@@ -481,6 +448,7 @@
 ;; board-piece?
 ;; board-land
 ;; board-remove-full
+;; board-fall-count
 ;;
 
 
@@ -501,6 +469,12 @@
 
 (define (board-remove-full brd)
   (rows-replenish (rows-remove-full brd)))
+
+
+(define (board-fall-count brd p)
+  (define pp (piece-down p))
+  (if (not (board-piece? brd pp)) 0
+      (add1 (board-fall-count brd pp))))
 
 
 ;;
@@ -571,7 +545,7 @@
 ;;
 ;; game-down-tick
 ;; game-down-key
-;; game-fall *
+;; game-fall
 ;;
 ;;;;
 
@@ -601,6 +575,12 @@
 
 (define (game-down-key g)
   (game-down g 2))
+
+
+(define (game-fall g)
+  (define space# (board-fall-count (game-board g) (game-piece g)))
+  (define new-g (change-piece g (lambda (p) (piece-down-n p space#))))
+  (game-score+ new-g (* 3 space#)))
 
 
 ;;----------;;
@@ -669,14 +649,14 @@
 
 
 (define (window-key w k)
-  (cond [(and (window-game-over? w) (key=? k " ")) (window-new)]
-        [(window-game-over? w) w]
-        [else
-         (cond [(key=? k "left") (window-key-left w)]
-               [(key=? k "right") (window-key-right w)]
-               [(key=? k "up") (window-key-up w)]
-               [(key=? k "down") (window-key-down w)]
-               [else w])]))
+  (cond [(and (window-stopped? w) (key=? k " ")) (window-new)]
+        [(window-stopped? w) w]
+        [(key=? k "left") (window-key-left w)]
+        [(key=? k "right") (window-key-right w)]
+        [(key=? k "up") (window-key-up w)]
+        [(key=? k "down") (window-key-down w)]
+        [(key=? k " ") (window-key-space w)]
+        [else w]))
 
 
 (define (window-key-left w)
@@ -695,6 +675,10 @@
   (struct-copy window w [game (game-down-key (window-game w))]))
 
 
+(define (window-key-space w)
+  (struct-copy window w [game (game-fall (window-game w))]))
+
+
 (define (window-draw w)
   (image-render-window w))
 
@@ -703,7 +687,7 @@
 ;; Routines ;;
 ;;----------;;
 
-(define (window-game-over? w)
+(define (window-stopped? w)
   (game-over? (window-game w)))
 
 
@@ -817,8 +801,7 @@
   (define pad (rectangle 1 40 "solid" "transparent"))
   (define w--w (rectangle (* PIX 7) 1 "solid" "transparent"))
 
-  
-  (if (window-game-over? w)
+  (if (window-stopped? w)
       (above score-img pad piece-img pad GAME-OVER-TEXT w--w)
       (above score-img pad piece-img w--w)))
 

@@ -62,6 +62,7 @@
 
 (check-equal? (piece-left (piece 0 0 2 5)) (piece 0 0 1 5))
 (check-equal? (piece-right (piece 0 0 2 5)) (piece 0 0 3 5))
+(check-equal? (piece-down-n (piece 0 0 2 5) 3) (piece 0 0 2 8))
 (check-equal? (piece-down (piece 0 0 2 5)) (piece 0 0 2 6))
 
 (check-equal? (piece-rotate (piece 0 0 2 5)) (piece 0 1 2 5))
@@ -161,6 +162,45 @@
 ;; Board
 ;;=======================================
 
+(define (cr count vals)
+  (row count (map (lambda (val) (entry val)) vals)))
+
+(check-equal? (cr 2 (list 0 F F 1)) (row 2 (list (e 0) (ef) (ef) (e 1))))
+
+
+;; EXAMPLE #1
+;;
+;; □ □ □ □ □
+;; □ □ □ □ ■
+;; ■ ■ ■ □ ■
+;; ■ ■ □ □ □
+;; ■ ■ ■ □ ■
+;; □ ■ □ □ □
+
+(define board-ex-1 (list (cr 0 (list F F F F F))
+                         (cr 1 (list F F F F 1))
+                         (cr 4 (list 0 0 1 F 1))
+                         (cr 2 (list 0 0 F F F))
+                         (cr 4 (list 1 1 1 F 0))
+                         (cr 1 (list F 1 F F F))))
+
+;; EXAMPLE #2
+;;
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ ■
+;; ■ ■ □ ■ ■
+;; □ ■ □ □ □
+
+(define board-ex-2 (list (cr 0 (list F F F F F))
+                         (cr 0 (list F F F F F))
+                         (cr 0 (list F F F F F))
+                         (cr 1 (list F F F F 1))
+                         (cr 4 (list 0 0 F 0 0))
+                         (cr 1 (list F 1 F F F))))
+
+
 (check-pred list? (board-new))
 
 (check-true (board-piece? board-ex-1 (piece 1 0 0 0)))
@@ -217,6 +257,23 @@
                          (cr 2 (list 0 F 0))))]
   (board-set b1 2 1 0)
   (check-equal? b1 b2))
+
+
+
+
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ □
+;; □ □ □ □ ■
+;; ■ ■ □ ■ ■
+;; □ ■ □ □ □
+
+
+(check-equal? (board-fall-count board-ex-2 (piece 0 3 3 0)) 0)
+(check-equal? (board-fall-count board-ex-2 (piece 0 3 2 0)) 1)
+(check-equal? (board-fall-count board-ex-2 (piece 0 3 1 -2)) 4)
+(check-equal? (board-fall-count board-ex-2 (piece 3 0 1 -1)) 2)
+(check-equal? (board-fall-count board-ex-2 (piece 3 0 0 -1)) 3)
 
 
 ;;=======================================
