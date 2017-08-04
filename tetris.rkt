@@ -740,8 +740,8 @@
 
 
 
-(define GAME-OVER-TEXT (above (text "Press \"space\"" 20 "black")
-                              (text "to start a new game" 20 "black")))
+(define GAME-OVER-TEXT (above (text "Press \"space\"" 18 "black")
+                              (text "to start a new game" 18 "black")))
 
 
 
@@ -759,17 +759,17 @@
   (define score-img (image-render-score (game-score g)))
   (define piece-img (image-render-next-piece (piece-id np) (piece-type np)))
 
-  (define pad (square 20 "solid" "transparent"))
-  (define w--w (rectangle (* PIX 5) 1 "solid" "transparent"))
+  (define pad (rectangle 1 40 "solid" "transparent"))
+  (define w--w (rectangle (* PIX 7) 1 "solid" "transparent"))
 
   
-  (if (window-game-over? w) (above score-img pad piece-img w--w)
-      (above score-img pad piece-img pad GAME-OVER-TEXT w--w)))
-
+  (if (window-game-over? w)
+      (above score-img pad piece-img pad GAME-OVER-TEXT w--w)
+      (above score-img pad piece-img w--w)))
 
 (define (image-render-score sc)
-  (define rect1 (rectangle 110 50 'solid 'black))
-  (define rect2 (rectangle 100 40 'solid 'white))
+  (define rect1 (rectangle 160 50 'solid 'black))
+  (define rect2 (rectangle 150 40 'solid 'white))
   (define txt (text (number->string sc) 20 "black"))
   (overlay txt rect2 rect1))
 
