@@ -470,11 +470,13 @@
 ;;       use only this API and don't use the code above at all
 
 
-;;
-;; API:
+;;------;;
+;; API: ;;
+;;------;;
 ;;
 ;; game-new
 ;; game-active?
+;; game-over?
 ;; game-score
 ;;
 ;; game-left
@@ -485,9 +487,14 @@
 ;; game-down-key
 ;; game-fall *
 ;;
+;;;;
 
 (define (game-new)
   (game (board-new) (piece-new) (piece-new) 0 #t))
+
+
+(define (game-over? g)
+  (not (game-active? g)))
 
 
 (define (game-left g)
@@ -510,9 +517,9 @@
   (game-down g 2))
 
 
-;;
-;; Lower-level routines
-;;
+;;----------;;
+;; Routines ;;
+;;----------;;
 
 (define (game-down g s)
   (if (game-move-down? g) (game-score+ (game-move-down g) s)
@@ -576,11 +583,14 @@
 
 
 (define (window-key w k)
-  (cond [(key=? k "left") (window-key-left w)]
-        [(key=? k "right") (window-key-right w)]
-        [(key=? k "up") (window-key-up w)]
-        [(key=? k "down") (window-key-down w)]
-        [else w]))
+  (cond [(and (window-game-over? w) (key=? k " ")) (window-new)]
+        [(window-game-over? w) w]
+        [else
+         (cond [(key=? k "left") (window-key-left w)]
+               [(key=? k "right") (window-key-right w)]
+               [(key=? k "up") (window-key-up w)]
+               [(key=? k "down") (window-key-down w)]
+               [else w])]))
 
 
 (define (window-key-left w)
@@ -604,11 +614,11 @@
 
 
 ;;
-;; Unit tests
+;; Routines
 ;;
 
-(check-pred window? (window-new))
-
+(define (window-game-over? w)
+  (game-over? (window-game w)))
 
 
 ;;=======================================
