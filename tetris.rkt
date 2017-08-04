@@ -23,8 +23,13 @@
 ;; Global constants
 ;;=======================================
 
+;; for testing
+;(define W 5)
+;(define H 6)
+
 (define W 10)          ;; board width (# of blocks)
 (define H 22)          ;; board height (# of blocks)
+
 (define PIX 30)       ;; block size (pixels)
 (define RATE 1.0)     ;; tick event inrerval (s)
 
@@ -104,6 +109,20 @@
 
 (define (block-visible*? bs)
   (andmap block-visible? bs))
+
+
+(define (min-x bs)
+  (apply min (map block-x bs)))
+(define (min-y bs)
+  (apply min (map block-y bs)))
+(define (max-x bs)
+  (apply max (map block-x bs)))
+(define (max-y bs)
+  (apply max (map block-y bs)))
+
+
+(define (shift-top-left bs)
+  (block-shift* bs (- (min-x bs)) (- (min-y bs))))
 
 
 ;;=======================================
@@ -240,10 +259,14 @@
 ;; piece->blocks
 ;; piece->visible-blocks
 ;;
+;; piece-width
+;; piece-height
+;;
 
 (define (piece-new)
   (define id (random PIECE#))
-  (piece id 0 0 -4))
+  (define type 0)
+  (piece id type (piece-start-x id) (piece-start-y id)))
 
 
 (define (piece-left p)
@@ -287,12 +310,34 @@
   (filter block-visible? bs))
 
 
+(define (piece-width id type)
+  (define raw-bs (global-piece-blocks id type))
+  (define bs (shift-top-left raw-bs))
+  (add1 (max-x bs)))
+
+
+(define (piece-height id type)
+  (define raw-bs (global-piece-blocks id type))
+  (define bs (shift-top-left raw-bs))
+  (add1 (max-y bs)))
+
+
 ;;
-;; Lower-level routines
+;; Routines
 ;;
 
 (define (piece->raw-blocks p)
   (global-piece-blocks (piece-id p) (piece-type p)))
+
+
+(define (piece-start-x id)
+  (define w (piece-width id 0))
+  (quotient (- W w) 2))
+
+
+(define (piece-start-y id)
+  (define h (piece-height id 0))
+  (- h))
 
 
 ;;=======================================
@@ -731,34 +776,6 @@
   im)
 
 
-
-;;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-;;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-;; RENDERING NEXT PIECE
-
-
-(define (min-x bs)
-  (apply min (map block-x bs)))
-(define (min-y bs)
-  (apply min (map block-y bs)))
-(define (max-x bs)
-  (apply max (map block-x bs)))
-(define (max-y bs)
-  (apply max (map block-y bs)))
-
-(check-equal? (min-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 1) 
-(check-equal? (min-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 10) 
-(check-equal? (max-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 4)
-(check-equal? (max-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 30)
-
-
-(define (shift-top-left bs)
-  (block-shift* bs (- (min-x bs)) (- (min-y bs))))
-
-(check-equal? (shift-top-left (list (b 1 2) (b 1 3) (b 1 4) (b 2 3)))
-              (list (b 0 0) (b 0 1) (b 0 2) (b 1 1)))
-
-
 (define (image-render-next-piece id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
@@ -767,9 +784,6 @@
   (define scene (rectangle (* PIX w) (* PIX h) "solid" "transparent"))
   (image-block*/scene bs id scene))
 
-
-;;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-;;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
@@ -823,7 +837,7 @@
 ;; Run
 ;;=======================================
 
-;(include "tests.rkt")
+;(include "test.rkt")
 
 (start-game)
 

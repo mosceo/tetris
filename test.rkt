@@ -36,6 +36,14 @@
 (check-true (block-visible*? (list (b 0 0) (b 0 1) (b 1 2))))
 (check-false (block-visible*? (list (b 0 0) (b 0 1) (b 0 1000))))
 
+(check-equal? (min-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 1) 
+(check-equal? (min-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 10) 
+(check-equal? (max-x (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 4)
+(check-equal? (max-y (list (b 3 30) (b 4 20) (b 1 10) (b 2 15))) 30)
+
+(check-equal? (shift-top-left (list (b 1 2) (b 1 3) (b 1 4) (b 2 3)))
+              (list (b 0 0) (b 0 1) (b 0 2) (b 1 1)))
+
 
 ;;=======================================
 ;; Game pieces
@@ -69,6 +77,36 @@
 
 (check-equal? (piece->blocks (piece 0 2 3 5)) (list (b 3 6) (b 4 6) (b 5 6) (b 4 7)))
 (check-equal? (piece->blocks (piece 1 0 3 5)) (list (b 3 5) (b 4 5) (b 3 6) (b 4 6)))
+
+(check-equal? (piece-width 0 0) 3)
+(check-equal? (piece-width 0 1) 2)
+(check-equal? (piece-width 1 0) 2)
+(check-equal? (piece-width 2 0) 4)
+(check-equal? (piece-width 2 1) 1)
+(check-equal? (piece-width 5 0) 3)
+(check-equal? (piece-width 5 1) 2)
+
+(check-equal? (piece-height 0 0) 2)
+(check-equal? (piece-height 0 1) 3)
+(check-equal? (piece-height 1 0) 2)
+(check-equal? (piece-height 2 0) 1)
+(check-equal? (piece-height 2 1) 4)
+(check-equal? (piece-height 5 0) 2)
+(check-equal? (piece-height 5 1) 3)
+
+
+
+
+
+
+
+;(define (piece-height p)
+;  (define raw-bs (piece->blocks p))
+;  (define bs (shift-top-left raw-bs))
+;  (add1 (max-y bs)))
+
+
+
 
 
 ;;=======================================
