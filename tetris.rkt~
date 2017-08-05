@@ -24,11 +24,11 @@
 ;;=======================================
 
 ;; for testing
-(define W 5)
-(define H 6)
+;(define W 5)
+;(define H 6)
 
-;(define W 10)          ;; board width (# of blocks)
-;(define H 22)          ;; board height (# of blocks)
+(define W 10)          ;; board width (# of blocks)
+(define H 22)          ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 (define RATE 1.0)     ;; tick event inrerval (s)
@@ -448,7 +448,7 @@
 ;; board-piece?
 ;; board-land
 ;; board-remove-full
-;; board-altitude
+;; board-fall-count
 ;;
 
 
@@ -471,10 +471,10 @@
   (rows-replenish (rows-remove-full brd)))
 
 
-(define (board-altitude brd p)
+(define (board-fall-count brd p)
   (define pp (piece-down p))
   (if (not (board-piece? brd pp)) 0
-      (add1 (board-altitude brd pp))))
+      (add1 (board-fall-count brd pp))))
 
 
 ;;
@@ -578,9 +578,9 @@
 
 
 (define (game-fall g)
-  (define alt (board-altitude (game-board g) (game-piece g)))
-  (define new-g (change-piece g (lambda (p) (piece-down-n p alt))))
-  (game-score+ new-g (* 3 alt)))
+  (define space# (board-fall-count (game-board g) (game-piece g)))
+  (define new-g (change-piece g (lambda (p) (piece-down-n p space#))))
+  (game-score+ new-g (* 3 space#)))
 
 
 ;;----------;;
@@ -820,7 +820,7 @@
 ;; Run
 ;;=======================================
 
-(include "test.rkt")
+;(include "test.rkt")
 
-;(start-game)
+(start-game)
 
