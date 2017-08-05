@@ -637,17 +637,47 @@
 ;; Window
 ;;=======================================
 
-(define-struct window [game counter])
+(define-struct window [game count1 count2 th])
 
 
 (define (window-new)
-  (window (game-new) 0))
+  (window (game-new) 0 0 8))
+
+
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 (define (window-tick w)
-  (define new-g (game-down-tick (window-game w)))
-  (define new-c (add1 (window-counter w)))
-  (window new-g new-c))
+  (cond [(window-stopped? w) w]
+        [else
+         (define w1 (window-update-counter w))
+         (if (window-action? w1)
+             (struct-copy window w1 [game (game-down-tick (window-game w1))]) w1)]))
+
+
+(define (window-action? w)
+  (= (window-count2 w) 0))
+
+
+(define (window-update-counter w)
+  (define c1 (window-count1 w))
+  (define c2 (window-count2 w))
+  (define th (window-th w))
+
+  (display th)
+  (display " ")
+
+  (define n-c1 (modulo (add1 c1) 100))
+  (define n-c2 (modulo (add1 c2) th))
+  (define n-th (if (and (= c1 0) (> th 1)) (sub1 th) th))
+
+  (struct-copy window w [count1 n-c1] [count2 n-c2] [th n-th]))
+
+
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 (define (window-key w k)
@@ -699,7 +729,7 @@
 
 (define (start-game)
   (big-bang (window-new)
-            [on-tick window-tick 1]
+            [on-tick window-tick 0.1]
             [on-key  window-key]
             [to-draw window-draw]))
 
