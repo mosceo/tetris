@@ -31,7 +31,6 @@
 (define H 22)          ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
-(define RATE 1.0)     ;; tick event inrerval (s)
 
 
 ;;=======================================
@@ -634,14 +633,23 @@
 
 
 ;;=======================================
+;; Constants
+;;=======================================
+
+(define INIT-THRESHOLD 15)
+(define INIT-LEVEL-TICKS 100)
+(define RATE (/ 1 20))
+
+
+;;=======================================
 ;; Window
 ;;=======================================
 
-(define-struct window [game count1 count2 th])
+(define-struct window [game cnt cnt-act th level])
 
 
 (define (window-new)
-  (window (game-new) 0 0 8))
+  (window (game-new) 1 0 INIT-THRESHOLD 1))
 
 
 ;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -651,28 +659,31 @@
 (define (window-tick w)
   (cond [(window-stopped? w) w]
         [else
-         (define w1 (window-update-counter w))
+         (define w1 (window-update-counters w))
          (if (window-action? w1)
              (struct-copy window w1 [game (game-down-tick (window-game w1))]) w1)]))
 
 
 (define (window-action? w)
-  (= (window-count2 w) 0))
+  (= (window-cnt-act w) 0))
 
 
-(define (window-update-counter w)
-  (define c1 (window-count1 w))
-  (define c2 (window-count2 w))
+(define (window-update-counters w)
+  (define cn (window-cnt w))
+  (define ca (window-cnt-act w))
   (define th (window-th w))
+  (define lv (window-level w))
 
-  (display th)
-  (display " ")
+  (set! cn (add1 cn))
+  (set! ca (add1 ca))
 
-  (define n-c1 (modulo (add1 c1) 100))
-  (define n-c2 (modulo (add1 c2) th))
-  (define n-th (if (and (= c1 0) (> th 1)) (sub1 th) th))
+  (when (= ca th) (set! ca 0))
+  (when (and (= ca 0) (>= cn INIT-LEVEL-TICKS))
+      (set! cn 0)
+      (when (> th 1) (set! th (sub1 th)))
+      (set! lv (add1 lv)))
 
-  (struct-copy window w [count1 n-c1] [count2 n-c2] [th n-th]))
+  (struct-copy window w [cnt cn] [cnt-act ca] [th th] [level lv]))
 
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -729,7 +740,7 @@
 
 (define (start-game)
   (big-bang (window-new)
-            [on-tick window-tick 0.1]
+            [on-tick window-tick RATE]
             [on-key  window-key]
             [to-draw window-draw]))
 
@@ -826,17 +837,25 @@
   (define g (window-game w))
   (define np (game-next-piece g))
   (define score (image-score (game-score g)))
+  (define level (image-level (window-level w)))
   (define next-piece (image-next-piece (piece-id np) (piece-type np)))
 
   (define p_ (rectangle 1 40 "solid" "transparent"))
   
   (if (window-stopped? w)
-      (above score p_ next-piece p_ GAME-OVER-TEXT)
-      (above score p_ next-piece)))
+      (above score level p_ next-piece p_ GAME-OVER-TEXT)
+      (above score level p_ next-piece)))
 
 (define (image-score sc)
   (define rect (rectangle 200 100 'solid "WhiteSmoke"))
   (define txt (text (number->string sc) 30 "black"))
+  (overlay txt rect))
+
+
+(define (image-level n)
+  (define rect (rectangle 200 50 'solid "LightGray"))
+  (define str (string-append "Level " (number->string n)))
+  (define txt (text str 20 "black"))
   (overlay txt rect))
 
 
