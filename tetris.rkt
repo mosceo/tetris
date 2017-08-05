@@ -581,7 +581,7 @@
   (define alt (board-altitude (game-board g) (game-piece g)))
   (define g1 (change-piece g (lambda (p) (piece-down-n p alt))))
   (define g2 (game-score+ g1 (* 3 alt)))
-  (define g3 (game-land g2))
+  (define g3 (game-down g2 0))
   g3)
 
 
@@ -708,7 +708,7 @@
 ;; Drawing images
 ;;=======================================
 
-(define (image-board-piece g)
+(define (image-borpic g)
   (define p (game-piece g))
   (define brd (game-board g))
   (define brd-image (board->image brd))
@@ -762,7 +762,7 @@
   im)
 
 
-(define (image-render-next-piece id type)
+(define (image-next-piece id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
   (define w (add1 (max-x bs)))
@@ -787,35 +787,27 @@
 
 
 (define (image-render-window w)
-  (define rpanel-img (image-render-rpanel w))
-  
-  (define borpic-img (image-board-piece (window-game w)))
-
-  (beside/align "top" borpic-img rpanel-img))
+  (define rpanel (image-rpanel w))
+  (define borpic (image-borpic (window-game w)))
+  (beside/align "top" borpic rpanel))
 
 
-(define (image-render-rpanel w)
+(define (image-rpanel w)
   (define g (window-game w))
   (define np (game-next-piece g))
-  (define score-img (image-render-score (game-score g)))
-  (define piece-img (image-render-next-piece (piece-id np) (piece-type np)))
+  (define score (image-score (game-score g)))
+  (define next-piece (image-next-piece (piece-id np) (piece-type np)))
 
-  (define pad (rectangle 1 40 "solid" "transparent"))
-  (define w--w (rectangle (* PIX 7) 1 "solid" "transparent"))
-
+  (define p_ (rectangle 1 40 "solid" "transparent"))
+  
   (if (window-stopped? w)
-      (above score-img pad piece-img pad GAME-OVER-TEXT w--w)
-      (above score-img pad piece-img w--w)))
+      (above score p_ next-piece p_ GAME-OVER-TEXT)
+      (above score p_ next-piece)))
 
-(define (image-render-score sc)
-  (define rect1 (rectangle 160 50 'solid 'black))
-  (define rect2 (rectangle 150 40 'solid 'white))
-  (define txt (text (number->string sc) 20 "black"))
-  (overlay txt rect2 rect1))
-
-
-;(define (image-render-next-piece g)
-;  ...)
+(define (image-score sc)
+  (define rect (rectangle 200 100 'solid "WhiteSmoke"))
+  (define txt (text (number->string sc) 30 "black"))
+  (overlay txt rect))
 
 
 ;;=======================================
@@ -825,4 +817,9 @@
 ;(include "test.rkt")
 
 (start-game)
+
+
+
+
+
 
