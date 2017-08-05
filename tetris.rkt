@@ -24,11 +24,11 @@
 ;;=======================================
 
 ;; for testing
-(define W 5)
-(define H 6)
+;(define W 5)
+;(define H 6)
 
-;(define W 10)          ;; board width (# of blocks)
-;(define H 22)          ;; board height (# of blocks)
+(define W 10)          ;; board width (# of blocks)
+(define H 22)          ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 (define RATE 1.0)     ;; tick event inrerval (s)
@@ -579,8 +579,10 @@
 
 (define (game-fall g)
   (define alt (board-altitude (game-board g) (game-piece g)))
-  (define new-g (change-piece g (lambda (p) (piece-down-n p alt))))
-  (game-score+ new-g (* 3 alt)))
+  (define g1 (change-piece g (lambda (p) (piece-down-n p alt))))
+  (define g2 (game-score+ g1 (* 3 alt)))
+  (define g3 (game-land g2))
+  g3)
 
 
 ;;----------;;
@@ -820,7 +822,7 @@
 ;; Run
 ;;=======================================
 
-(include "test.rkt")
+;(include "test.rkt")
 
-;(start-game)
+(start-game)
 
