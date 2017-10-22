@@ -118,26 +118,39 @@
 (define (block-above*? bs)
   (ormap block-above? bs))
 
-
+;; Block -> Boolean
+;; check if a block visible (right on the board)
 (define (block-visible? b)
   (and (block-inside? b)
        (not (block-above? b))))
 
-
+;; [List-of Block] -> Boolean
+;; check if ALL blocks are visible
 (define (block-visible*? bs)
   (andmap block-visible? bs))
 
-
+;; [List-of Block] -> Number
+;; find the minimun x-coordinate among a list of blocks
 (define (min-x bs)
   (apply min (map block-x bs)))
+
+;; [List-of Block] -> Number
+;; find the minimum y-coordinate among a list of blocks
 (define (min-y bs)
   (apply min (map block-y bs)))
+
+;; [List-of Block] -> Number
+;; find the maximum x-coordinate among a list of blocks
 (define (max-x bs)
   (apply max (map block-x bs)))
+
+;; [List-of Block] -> Number
+;; find the maximum y-coordinate among a list of blocks
 (define (max-y bs)
   (apply max (map block-y bs)))
 
-
+;; [List-of Block] -> [List-of Block]
+;; shift a set of blocks (as one piece) to the top-left corner
 (define (shift-top-left bs)
   (block-shift* bs (- (min-x bs)) (- (min-y bs))))
 
@@ -278,7 +291,6 @@
 ;;
 ;; piece-width
 ;; piece-height
-;;
 ;;
 
 (define (piece-new)
