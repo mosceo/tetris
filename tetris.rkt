@@ -24,11 +24,11 @@
 ;;=======================================
 
 ;; for testing
-;(define W 5)
-;(define H 6)
+(define W 5)
+(define H 6)
 
-(define W 10)          ;; board width (# of blocks)
-(define H 22)          ;; board height (# of blocks)
+;(define W 10)          ;; board width (# of blocks)
+;(define H 22)          ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 
@@ -39,9 +39,13 @@
 
 (define F #f)
 
+;; Matrix Number Number -> Any
+;; get a matrix entry M[row][col] 
 (define (matrix-ref mat row col)
   (list-ref (list-ref mat row) col))
 
+;; Number -> Boolean
+;; check if it is a proper piece id
 (define (id? x)
   (and (number? x) (>= x 0) (< x PIECE#)))
 
@@ -49,13 +53,6 @@
 ;;=======================================
 ;; Block
 ;;=======================================
-
-(define-struct block [x y] #:transparent)
-
-(define (b x y)
-  (block x y))
-
-
 ;;
 ;; API:
 ;;
@@ -69,34 +66,55 @@
 ;; block-visible*?
 ;;
 
-;; NOTE: the meaning of function that work with lists differ,
-;;       block-inside*? needs all blocks be inside,
-;;       when block-above*? needs only one block be above
+;; A Block is a structure:
+;;   (make-block Number Number)
+;; represents a block in a game of tetris by its coordinates
+;;
+;; example: (make-block 2 6)
+(define-struct block [x y] #:transparent)
 
+
+;; Number Number -> Block
+;; a shorthand to create a block
+(define (b x y)
+  (block x y))
+
+;; Block Number Number -> Block
+;; shift a block in both directions
 (define (block-shift b dx dy)
   (block (+ (block-x b) dx)
          (+ (block-y b) dy)))
 
-
+;; [List-of Block] Number Number -> [List-of Block]
+;; shift each block in a list in both directions
 (define (block-shift* bs dx dy)
   (map (lambda (b) (block-shift b dx dy)) bs))
 
+;; DEFINITION:
+;; we say that a block is "inside" a board,
+;; if the block is visually inside it or above it
 
+;; Block -> Boolean
+;; check if a block is inside the board
+;; (we say that a block is "inside" the board if it is visually inside the board or above ir)
 (define (block-inside? b)
   (define x (block-x b))
   (define y (block-y b))
   (and (>= x 0) (< x W)
        (< y H)))
 
-
+;; [List-of Block] -> Boolean
+;; check if ALL blocks are inside a board
 (define (block-inside*? bs)
   (andmap block-inside? bs))
 
-
+;; Block -> Boolean
+;; check if a block is above a board
 (define (block-above? b)
   (< (block-y b) 0))
 
-
+;; [List-of Block] -> Boolean
+;; check if AT LEAST ONE block is above a board
 (define (block-above*? bs)
   (ormap block-above? bs))
 
@@ -242,7 +260,6 @@
 
 (define-struct piece [id type x y] #:transparent)
 
-
 ;;
 ;; API:
 ;;
@@ -351,7 +368,6 @@
 
 (define-struct entry [id] #:mutable #:transparent)
 
-
 ;;
 ;; API:
 ;;
@@ -439,7 +455,6 @@
 ;;=======================================
 ;; Board
 ;;=======================================
-
 ;;
 ;; API:
 ;;
@@ -449,7 +464,6 @@
 ;; board-remove-full
 ;; board-altitude
 ;;
-
 
 (define (board-new)
   (rows-new H))
@@ -694,11 +708,11 @@
 (define (window-key w k)
   (cond [(and (window-stopped? w) (key=? k " ")) (window-new)]
         [(window-stopped? w) w]
-        [(key=? k "left") (window-key-left w)]
+        [(key=? k "left")  (window-key-left w)]
         [(key=? k "right") (window-key-right w)]
-        [(key=? k "up") (window-key-up w)]
-        [(key=? k "down") (window-key-down w)]
-        [(key=? k " ") (window-key-space w)]
+        [(key=? k "up")    (window-key-up w)]
+        [(key=? k "down")  (window-key-down w)]
+        [(key=? k " ")     (window-key-space w)]
         [else w]))
 
 
@@ -863,12 +877,8 @@
 ;; Run
 ;;=======================================
 
-;(include "test.rkt")
+;; uncomment W and H definitions for testing in the beginning of the file
+;; and uncomment the following line to run tests
+(include "unittest.rkt")
 
-(start-game)
-
-
-
-
-
-
+;(start-game)
