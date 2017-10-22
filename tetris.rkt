@@ -65,12 +65,19 @@
 ;; block-visible?
 ;; block-visible*?
 ;;
+;; min-x
+;; min-y
+;; max-x
+;; max-y
+;;
+;; shift-top-left
+;;
 
 ;; A Block is a structure:
 ;;   (make-block Number Number)
 ;; represents a block in a game of tetris by its coordinates
 ;;
-;; example: (make-block 2 6)
+;; example: (make-block 0 6)
 (define-struct block [x y] #:transparent)
 
 
@@ -80,28 +87,26 @@
   (block x y))
 
 ;; Block Number Number -> Block
-;; shift a block in both directions
+;; shift a block
 (define (block-shift b dx dy)
   (block (+ (block-x b) dx)
          (+ (block-y b) dy)))
 
 ;; [List-of Block] Number Number -> [List-of Block]
-;; shift each block in a list in both directions
+;; shift each block in a list
 (define (block-shift* bs dx dy)
   (map (lambda (b) (block-shift b dx dy)) bs))
 
 ;; DEFINITION:
-;; we say that a block is "inside" a board,
-;; if the block is visually inside it or above it
+;; we say that a block is "inside" a board, if it is visually
+;; on the board or will appear on the board when dragged down
 
 ;; Block -> Boolean
 ;; check if a block is inside the board
-;; (we say that a block is "inside" the board if it is visually inside the board or above ir)
 (define (block-inside? b)
   (define x (block-x b))
   (define y (block-y b))
-  (and (>= x 0) (< x W)
-       (< y H)))
+  (and (>= x 0) (< x W) (< y H)))
 
 ;; [List-of Block] -> Boolean
 ;; check if ALL blocks are inside a board
@@ -119,7 +124,7 @@
   (ormap block-above? bs))
 
 ;; Block -> Boolean
-;; check if a block visible (right on the board)
+;; check if a block is visible (right on the board)
 (define (block-visible? b)
   (and (block-inside? b)
        (not (block-above? b))))
