@@ -163,7 +163,15 @@
 ;;=======================================
 ;; Game pieces
 ;;=======================================
+;;
+;; API:
+;;
+;; global-piece-color
+;; global-piece-blocks
+;; global-piece-type#
+;;
 
+;; the number of pieces
 (define PIECE# 7)
 
 
@@ -241,33 +249,25 @@
 (define P6-BLOCK (list (list (b 0 0) (b 1 0) (b 1 1) (b 2 1))
                        (list (b 2 0) (b 2 1) (b 1 1) (b 1 2))))
 
-
-;;;;
 ;; All data in one place
-;;;;
-
 (define PIECE-COLOR (list P0-COLOR P1-COLOR P2-COLOR P3-COLOR P4-COLOR P5-COLOR P6-COLOR))
 (define PIECE-BLOCK (list P0-BLOCK P1-BLOCK P2-BLOCK P3-BLOCK P4-BLOCK P5-BLOCK P6-BLOCK))
 (define PIECE-TYPE# (list (length P0-BLOCK) (length P1-BLOCK) (length P2-BLOCK)
                           (length P3-BLOCK) (length P4-BLOCK) (length P5-BLOCK)
                           (length P6-BLOCK)))
 
-;;
-;; API:
-;;
-;; global-piece-color
-;; global-piece-blocks
-;; global-piece-type#
-;;
-
+;; Number -> Color
+;; get the color of a piece
 (define (global-piece-color id)
   (list-ref PIECE-COLOR id))
 
-
+;; Number Number -> [List-of Block]
+;; get raw blocks for a piece in a certain configuration
 (define (global-piece-blocks id type)
   (matrix-ref PIECE-BLOCK id type))
 
-
+;; Number -> Number
+;; get the number of configurations for a piece
 (define (global-piece-type# id)
   (list-ref PIECE-TYPE# id))
 
