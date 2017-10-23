@@ -23,11 +23,11 @@
 ;;=======================================
 
 ;; for testing
-(define W 5)
-(define H 6)
+;(define W 5)
+;(define H 6)
 
-;(define W 10)          ;; board width (# of blocks)
-;(define H 22)          ;; board height (# of blocks)
+(define W 10)          ;; board width (# of blocks)
+(define H 22)          ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 
@@ -898,6 +898,8 @@
 ;; Big-bang
 ;;=======================================
 
+;; Void -> Window
+;; run a game of tetris
 (define (start-game)
   (big-bang (window-new)
             [on-tick window-tick RATE]
@@ -1030,6 +1032,6 @@
 
 ;; uncomment W and H definitions for testing in the beginning of the file
 ;; and uncomment the following line to run tests
-(include "unittest.rkt")
+;(include "unittest.rkt")
 
-;(start-game)
+(start-game)
