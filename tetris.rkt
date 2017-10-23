@@ -70,10 +70,10 @@
 ;;
 
 ;; A Block is a structure:
-;;   (make-block Number Number)
+;;   (block Number Number)
 ;; represents a block in a game of tetris by its coordinates
 ;;
-;; Ex.: (make-block 0 6)
+;; Ex.: (block 0 6)
 ;;
 (define-struct block [x y] #:transparent)
 
@@ -304,11 +304,11 @@
 ;;
 
 ;; A Piece is a structure:
-;;   (make-piece ID Number Number Number)
+;;   (piece ID Number Number Number)
 ;; represents a piece in a game of tetris where id and type specify the piece,
 ;;   and (x, y) is its position on the board
 ;;
-;; Ex.: (make-piece 3 2 0 -3)
+;; Ex.: (piece 3 2 0 -3)
 ;;
 (define-struct piece [id type x y] #:transparent)
 
@@ -424,14 +424,14 @@
 ;;
 
 ;; An Entry is a structure:
-;;   (make-entry ID|#f)
+;;   (entry ID|#f)
 ;; represents one entry (cell) of a board,
 ;;   a cell is considered empty if it contains #f, otherwise it contains
 ;;   an ID and is considred taken by a block with this ID
 ;;   entry is mutable so that you don't need to copy
 ;;   the whole board to change one entry
 ;;
-;; Ex.: (make-entry 0)
+;; Ex.: (entry 0)
 ;;
 (define-struct entry [id] #:mutable #:transparent)
 
@@ -471,11 +471,11 @@
 ;;
 
 ;; An Row is a structure:
-;;   (make-row Number [List-of Entry])
+;;   (row Number [List-of Entry])
 ;; represents a row of cells in a board,
 ;;   the number says how many cells contain blocks
 ;;
-;; Ex.: (make-row 2 (list (e #f) (e 1) (e #f) (e #f) (e 2)))
+;; Ex.: (row 2 (list (e #f) (e 1) (e #f) (e #f) (e 2)))
 ;;
 (define-struct row [count entries] #:mutable #:transparent)
 
@@ -650,15 +650,8 @@
 ;;=======================================
 ;; Game
 ;;=======================================
-
-(define-struct game [board piece next-piece
-                     score active?])
-
-
-
-;;------;;
-;; API: ;;
-;;------;;
+;;
+;; API:
 ;;
 ;; game-new
 ;; game-active?
@@ -673,36 +666,54 @@
 ;; game-down-key
 ;; game-fall
 ;;
-;;;;
 
+;; A Game is a structure:
+;;   (game Board Piece Piece Number Boolean)
+;; represents a state of a game of tetris
+;;
+;; Ex.: (game (board-new) (piece-new) (piece-new) 0 #t)
+;;
+(define-struct game [board piece next-piece
+                     score active?])
+
+
+;; Void -> Game
+;; create an initial state of a game
 (define (game-new)
   (game (board-new) (piece-new) (piece-new) 0 #t))
 
-
+;; Game -> Boolean
+;; check if a game has finished
 (define (game-over? g)
   (not (game-active? g)))
 
-
+;; Game -> Game
+;; perform a left move
 (define (game-left g)
   (change-piece g piece-left))
 
-
+;; Game -> Game
+;; perform a right move
 (define (game-right g)
   (change-piece g piece-right))
 
-
+;; Game -> Game
+;; perform rotation
 (define (game-rotate g)
   (change-piece g piece-rotate))
 
-
+;; Game -> Game
+;; move the piece down (clock event)
 (define (game-down-tick g)
   (game-down g 1))
 
-
+;; Game -> Game
+;; move the piece down (pressed key)
 (define (game-down-key g)
   (game-down g 2))
 
-
+;; Game -> Game
+;; perform the fall in a game
 (define (game-fall g)
   (define alt (board-altitude (game-board g) (game-piece g)))
   (define g1 (change-piece g (lambda (p) (piece-down-n p alt))))
@@ -715,44 +726,54 @@
 ;; Routines
 ;;-----------
 
+;; Game Number -> Game
+;; move the piece down and increment the score
 (define (game-down g s)
   (if (game-move-down? g) (game-score+ (game-move-down g) s)
       (game-land g)))
 
-
+;; Game -> Boolean
+;; check if the piece can be moved down
 (define (game-move-down? g)
   (board-piece? (game-board g) (piece-down (game-piece g))))
 
-
+;; Game -> Boolean
+;; move the piece down in a game
 (define (game-move-down g)
   (define new-p (piece-down (game-piece g)))
   (struct-copy game g [piece new-p]))
 
-
+;; Game -> Game
+;; if the piece is above, finish the game, otherwise land the piece
 (define (game-land g)
   (if (game-piece-above? g) (game-stop g) (game-land-piece g)))
 
-
+;; Game -> Game
+;; land the piece and update the pieces
 (define (game-land-piece g)
   (struct-copy game g
                [board (board-land (game-board g) (game-piece g))]
                [piece (game-next-piece g)]
                [next-piece (piece-new)]))
 
-
+;; Game Number -> Game
+;; increment the score in a game
 (define (game-score+ g ds)
   (define new-sc (+ (game-score g) ds))
   (struct-copy game g [score new-sc]))
 
-
+;; Game -> Boolean
+;; check if the piece is above the board in a game
 (define (game-piece-above? g)
   (piece-above? (game-piece g)))
 
-
+;; Game -> Game
+;; stop a game
 (define (game-stop g)
   (struct-copy game g [active? #f]))
 
-
+;; Game -> Game
+;; update pieces in a game
 (define (change-piece g fn)
   (define new-p (fn (game-piece g)))
   (if (board-piece? (game-board g) new-p)
