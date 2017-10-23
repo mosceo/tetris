@@ -406,9 +406,6 @@
 ;;=======================================
 ;; Entry
 ;;=======================================
-
-(define-struct entry [id] #:mutable #:transparent)
-
 ;;
 ;; API:
 ;;
@@ -418,18 +415,36 @@
 ;; entry-set
 ;;
 
+;; An Entry is a structure:
+;;   (make-entry ID|#f)
+;; represents one entry (cell) of a board,
+;;   a cell is considered empty if it contains #f, otherwise it contains
+;;   an ID and is considred taken by a block with this ID
+;;   entry is mutable so that you don't need to copy
+;;   the whole board to change one entry
+;;
+;; Ex.: (make-entry 0)
+;;
+(define-struct entry [id] #:mutable #:transparent)
+
+
+;; Number -> Entry
+;; a shorthand to create an entry
 (define (e id)
   (entry id))
 
-
+;; Void -> Entry
+;; create an empty entry
 (define (ef)
   (e #f))
 
-
+;; Entry -> Boolean
+;; check if an entry is taken by a block
 (define (entry-taken? e)
   (number? (entry-id e)))
 
-
+;; Entry Number -> Entry
+;; make an entry taken by a block with a given ID
 (define (entry-set e id)
   (set-entry-id! e id))
 
