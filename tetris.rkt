@@ -713,7 +713,7 @@
   (game-down g 2))
 
 ;; Game -> Game
-;; perform the fall in a game
+;; perform a fall in a game
 (define (game-fall g)
   (define alt (board-altitude (game-board g) (game-piece g)))
   (define g1 (change-piece g (lambda (p) (piece-down-n p alt))))
@@ -783,14 +783,33 @@
 ;;=======================================
 ;; Window
 ;;=======================================
+;;
+;; API:
+;;
+;; window-new
+;; window-tick
+;; window-key
+;; window-draw
+;;
+
+;; A Window is a structure:
+;;   (window Game Number Number Number Number)
+;; represents the highest-level state of a game of tetris, contains the current level
+;;   and additional data that is needed to control the speed of the game
+;;
+;; Ex.: (window (game-new) 1 0 INIT-THRESHOLD 1)
+;;
 
 (define-struct window [game cnt cnt-act th level])
 
 
+;; Void -> Window
+;; create a window for a new game
 (define (window-new)
   (window (game-new) 1 0 INIT-THRESHOLD 1))
 
-
+;; Window -> Window
+;; a global tick changes the state of a window
 (define (window-tick w)
   (cond [(window-stopped? w) w]
         [else
@@ -798,11 +817,65 @@
          (if (window-action? w1)
              (struct-copy window w1 [game (game-down-tick (window-game w1))]) w1)]))
 
+;; Window KeyEvent -> Window
+;; handle a big-bang's key event
+(define (window-key w k)
+  (cond [(and (window-stopped? w) (key=? k " ")) (window-new)]
+        [(window-stopped? w) w]
+        [(key=? k "left")  (window-key-left w)]
+        [(key=? k "right") (window-key-right w)]
+        [(key=? k "up")    (window-key-up w)]
+        [(key=? k "down")  (window-key-down w)]
+        [(key=? k " ")     (window-key-space w)]
+        [else w]))
 
+;; Window -> Image
+;; render a window
+(define (window-draw w)
+  (image-render-window w))
+
+
+;;----------;;
+;; Routines ;;
+;;----------;;
+
+;; Window -> Window
+;; the 'left' key has been pressed
+(define (window-key-left w)
+  (struct-copy window w [game (game-left (window-game w))]))
+
+;; Window -> Window
+;; the 'right' key has been pressed
+(define (window-key-right w)
+  (struct-copy window w [game (game-right (window-game w))]))
+
+;; Window -> Window
+;; the 'up' key has been pressed
+(define (window-key-up w)
+  (struct-copy window w [game (game-rotate (window-game w))]))
+
+;; Window -> Window
+;; the 'down' key has been pressed
+(define (window-key-down w)
+  (struct-copy window w [game (game-down-key (window-game w))]))
+
+;; Window -> Window
+;; the 'space' key has been pressed
+(define (window-key-space w)
+  (struct-copy window w [game (game-fall (window-game w))]))
+
+;; Window -> Boolean
+;; check if a game has finished
+(define (window-stopped? w)
+  (game-over? (window-game w)))
+
+;; Window -> Boolean
+;; ...
 (define (window-action? w)
   (= (window-cnt-act w) 0))
 
-
+;; Window -> Window
+;; update counters
 (define (window-update-counters w)
   (define cn (window-cnt w))
   (define ca (window-cnt-act w))
@@ -821,48 +894,15 @@
   (struct-copy window w [cnt cn] [cnt-act ca] [th th] [level lv]))
 
 
+;;=======================================
+;; Big-bang
+;;=======================================
 
-(define (window-key w k)
-  (cond [(and (window-stopped? w) (key=? k " ")) (window-new)]
-        [(window-stopped? w) w]
-        [(key=? k "left")  (window-key-left w)]
-        [(key=? k "right") (window-key-right w)]
-        [(key=? k "up")    (window-key-up w)]
-        [(key=? k "down")  (window-key-down w)]
-        [(key=? k " ")     (window-key-space w)]
-        [else w]))
-
-
-(define (window-key-left w)
-  (struct-copy window w [game (game-left (window-game w))]))
-
-
-(define (window-key-right w)
-  (struct-copy window w [game (game-right (window-game w))]))
-
-
-(define (window-key-up w)
-  (struct-copy window w [game (game-rotate (window-game w))]))
-
-
-(define (window-key-down w)
-  (struct-copy window w [game (game-down-key (window-game w))]))
-
-
-(define (window-key-space w)
-  (struct-copy window w [game (game-fall (window-game w))]))
-
-
-(define (window-draw w)
-  (image-render-window w))
-
-
-;;----------;;
-;; Routines ;;
-;;----------;;
-
-(define (window-stopped? w)
-  (game-over? (window-game w)))
+(define (start-game)
+  (big-bang (window-new)
+            [on-tick window-tick RATE]
+            [on-key  window-key]
+            [to-draw window-draw]))
 
 
 
@@ -982,26 +1022,6 @@
   (define str (string-append "Level " (number->string n)))
   (define txt (text str 20 "black"))
   (overlay txt rect))
-
-
-
-
-;; ■ ■ ■
-;; ■ ■ ■
-;; ■ ■ ■
-
-
-
-
-;;=======================================
-;; Big-bang
-;;=======================================
-
-(define (start-game)
-  (big-bang (window-new)
-            [on-tick window-tick RATE]
-            [on-key  window-key]
-            [to-draw window-draw]))
 
 
 ;;=======================================
