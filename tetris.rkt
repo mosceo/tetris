@@ -16,7 +16,6 @@
 
 (require 2htdp/image)
 (require 2htdp/universe)
-(require rackunit)
 
 
 ;;=======================================
@@ -265,17 +264,17 @@
                           (length P3-BLOCK) (length P4-BLOCK) (length P5-BLOCK)
                           (length P6-BLOCK)))
 
-;; Number -> Color
+;; ID -> Color
 ;; get the color of a piece
 (define (global-piece-color id)
   (list-ref PIECE-COLOR id))
 
-;; Number Number -> [List-of Block]
+;; ID Number -> [List-of Block]
 ;; get raw blocks for a piece in a certain configuration
 (define (global-piece-blocks id type)
   (matrix-ref PIECE-BLOCK id type))
 
-;; Number -> Number
+;; ID -> Number
 ;; get the number of configurations for a piece
 (define (global-piece-type# id)
   (list-ref PIECE-TYPE# id))
@@ -305,13 +304,14 @@
 ;;
 
 ;; A Piece is a structure:
-;;   (make-piece Number Number Number Number)
+;;   (make-piece ID Number Number Number)
 ;; represents a piece in a game of tetris where id and type specify the piece,
 ;;   and (x, y) is its position on the board
 ;;
 ;; Ex.: (make-piece 3 2 0 -3)
 ;;
 (define-struct piece [id type x y] #:transparent)
+
 
 ;; Void -> Piece
 ;; create a random piece
@@ -379,14 +379,14 @@
 ;;   The piece width is defined to be the minimum width of a board that can
 ;;   contain the piece. The piece height is defined in a similar fashion.
 
-;; Number Number -> Number
+;; ID Number -> Number
 ;; compute a piece width
 (define (piece-width id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
   (add1 (max-x bs)))
 
-;; Number Number -> Number
+;; ID Number -> Number
 ;; compute a piece height
 (define (piece-height id type)
   (define raw-bs (global-piece-blocks id type))
@@ -398,13 +398,13 @@
 ;; Routines
 ;;-----------
 
-;; Number -> Number
+;; ID -> Number
 ;; compute the initial x-coordinate for a piece
 (define (piece-start-x id)
   (define w (piece-width id 0))
   (quotient (- W w) 2))
 
-;; Number -> Number
+;; ID -> Number
 ;; compute the initial y-coordinate for a piece
 (define (piece-start-y id)
   (define h (piece-height id 0))
@@ -436,7 +436,7 @@
 (define-struct entry [id] #:mutable #:transparent)
 
 
-;; Number -> Entry
+;; ID -> Entry
 ;; a shorthand to create an entry
 (define (e id)
   (entry id))
@@ -451,7 +451,7 @@
 (define (entry-taken? e)
   (number? (entry-id e)))
 
-;; Entry Number -> Entry
+;; Entry ID -> Entry
 ;; make an entry taken by a block with a given ID
 (define (entry-set e id)
   (set-entry-id! e id))
