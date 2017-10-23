@@ -146,6 +146,9 @@
 (check-equal? (rows-remove-full (list (row 1 'd) (row W 'd)  (row W 'd) (row 2 'd)))
               (list (row 1 'd) (row 2 'd)))
 
+(check-equal? (rows-replenish (list (row 1 'd) (row 2 'd)))
+              (list (row-new) (row-new) (row-new) (row-new) (row 1 'd) (row 2 'd)))
+
 (check-equal? (row-new) (row 0 (list (ef) (ef) (ef) (ef) (ef))))
 
 (check-true (row-full? (row W 'd)))
@@ -153,9 +156,6 @@
 
 (check-true (row-not-full? (row 1 'd)))
 (check-false (row-not-full? (row W 'd)))
-
-(check-equal? (rows-replenish (list (row 1 'd) (row 2 'd)))
-              (list (row-new) (row-new) (row-new) (row-new) (row 1 'd) (row 2 'd)))
 
 
 ;;=======================================
