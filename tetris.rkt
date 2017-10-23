@@ -98,8 +98,8 @@
   (map (lambda (b) (block-shift b dx dy)) bs))
 
 ;; DEFINITION:
-;; we say that a block is "inside" a board, if it is visually
-;; on the board or will appear on the board when dragged down
+;;   We say that a block is "inside" a board, if it is visually
+;;   on the board or will appear on the board when dragged down.
 
 ;; Block -> Boolean
 ;; check if a block is inside the board
@@ -275,9 +275,6 @@
 ;;=======================================
 ;; Piece
 ;;=======================================
-
-(define-struct piece [id type x y] #:transparent)
-
 ;;
 ;; API:
 ;;
@@ -298,31 +295,46 @@
 ;; piece-height
 ;;
 
+;; A Piece is a structure:
+;;   (make-piece Number Number Number Number)
+;; represents a piece in a game of tetris where id and type specify the piece,
+;;   and (x, y) is its position on the board
+;;
+;; example: (make-block 0 6)
+(define-struct piece [id type x y] #:transparent)
+
+;; Void -> Piece
+;; create a random piece
 (define (piece-new)
   (define id (random PIECE#))
   (define type 0)
   (piece id type (piece-start-x id) (piece-start-y id)))
 
-
+;; Piece -> Piece
+;; move a piece to the left
 (define (piece-left p)
   (define new-x (sub1 (piece-x p)))
   (struct-copy piece p [x new-x]))
 
-
+;; Piece -> Piece
+;; move a piece to the right
 (define (piece-right p)
   (define new-x (add1 (piece-x p)))
   (struct-copy piece p [x new-x]))
 
-
+;; Piece -> Piece
+;; move a piece down a specified number of times
 (define (piece-down-n p dy)
   (define new-y (+ (piece-y p) dy))
   (struct-copy piece p [y new-y]))
 
-
+;; Piece -> Piece
+;; move a piece down
 (define (piece-down p)
   (piece-down-n p 1))
 
-
+;; Piece -> Piece
+;; rotate a piece
 (define (piece-rotate p)
   (define id (piece-id p))
   (define type (piece-type p))
@@ -330,31 +342,42 @@
   (define new-type (modulo (add1 type) type#))
   (struct-copy piece p [type new-type]))
 
-
+;; Piece -> Boolean
+;; check if a piece is completely inside a board
+;; (read the definition of "inside" for a block)
 (define (piece-inside? p)
   (block-inside*? (piece->blocks p)))
 
-
+;; Piece -> Boolean
+;; check if a piece is at least partially above the board
 (define (piece-above? p)
   (block-above*? (piece->blocks p)))
 
-
+;; Piece -> [List-of Block]
+;; convert a piece to a list of blocks
 (define (piece->blocks p)
   (define raw-bs (piece->raw-blocks p))
   (block-shift* raw-bs (piece-x p) (piece-y p)))
 
-
+;; Piece -> [List-of Block]
+;; convert a piece to a list of blocks, that are visible on the page
 (define (piece->visible-blocks p)
   (define bs (piece->blocks p))
   (filter block-visible? bs))
 
+;; DEFINITION:
+;;   The piece width is defined to be the minimum width of a board that can
+;;   contain the piece. The piece height is defined in a similar fashion.
 
+;; Number Number -> Number
+;; compute a piece width
 (define (piece-width id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
   (add1 (max-x bs)))
 
-
+;; Number Number -> Number
+;; compute a piece height
 (define (piece-height id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
