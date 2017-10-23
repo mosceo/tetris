@@ -112,11 +112,14 @@
 ;;=======================================
 
 (check-pred entry? (e 1))
+
 (check-pred entry? (ef))
+
 (check-equal? (entry-id (e 1)) 1)
 (check-equal? (entry-id (ef)) #f)
 
 (check-true (entry-taken? (e 1)))
+(check-false (entry-taken? (ef)))
 (check-false (entry-taken? (e #f)))
 
 (local [(define e1 (e 1))]
