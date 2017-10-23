@@ -77,7 +77,8 @@
 ;;   (make-block Number Number)
 ;; represents a block in a game of tetris by its coordinates
 ;;
-;; example: (make-block 0 6)
+;; Ex.: (make-block 0 6)
+;;
 (define-struct block [x y] #:transparent)
 
 
@@ -300,7 +301,8 @@
 ;; represents a piece in a game of tetris where id and type specify the piece,
 ;;   and (x, y) is its position on the board
 ;;
-;; example: (make-block 0 6)
+;; Ex.: (make-piece 3 2 0 -3)
+;;
 (define-struct piece [id type x y] #:transparent)
 
 ;; Void -> Piece
@@ -384,9 +386,9 @@
   (add1 (max-y bs)))
 
 
-;;
+;;-----------
 ;; Routines
-;;
+;;-----------
 
 ;; Number -> Number
 ;; compute the initial x-coordinate for a piece
@@ -470,9 +472,9 @@
   (filter row-not-full? rs))
 
 
-;;
+;;---------------------
 ;; Lower-level routines
-;;
+;;---------------------
 
 (define (row-new)
   (row 0 (for/list ([i W]) (ef))))
