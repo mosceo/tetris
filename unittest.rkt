@@ -2,6 +2,8 @@
 ;; Helpers
 ;;=======================================
 
+(define F #f)
+
 (check-false (id? #f))
 (check-false (id? 1000))
 (check-true (id? 0))

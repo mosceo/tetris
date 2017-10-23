@@ -37,17 +37,10 @@
 ;; Helpers
 ;;=======================================
 
-(define F #f)
-
 ;; Matrix Number Number -> Any
 ;; get a matrix entry M[row][col] 
 (define (matrix-ref mat row col)
   (list-ref (list-ref mat row) col))
-
-;; Number -> Boolean
-;; check if it is a proper piece id
-(define (id? x)
-  (and (number? x) (>= x 0) (< x PIECE#)))
 
 
 ;;=======================================
@@ -174,6 +167,17 @@
 
 ;; the number of pieces
 (define PIECE# 7)
+
+;; An ID is a Number 0..6
+;; represents the ID of a piece
+;;
+;; Ex.: 6
+;;
+
+;; Any -> Boolean
+;; check if it is a proper piece id
+(define (id? x)
+  (and (number? x) (>= x 0) (< x PIECE#)))
 
 
 ;; Piece 0
@@ -538,25 +542,42 @@
 ;; board-altitude
 ;;
 
+;; An Board is a [List-of Row] of size H
+;; represents a board in a game of tetris
+;;
+;; Ex.: (rows-new H)
+;;
+
+
+;; Void -> Board
+;; create an empty board
 (define (board-new)
   (rows-new H))
 
-
+;; Board Piece -> Boolean
+;; check if a piece can be put on a board
 (define (board-piece? brd p)
   (and (piece-inside? p)
        (not (board-piece-collision? brd p))))
 
-
+;; Board Piece -> Board
+;; put a piece on a board
 (define (board-land brd p)
   (define bs (piece->visible-blocks p))
   (board-land-block* brd bs (piece-id p))
   (board-remove-full brd))
 
-
+;; Board -> Board
+;; remove full rows
 (define (board-remove-full brd)
   (rows-replenish (rows-remove-full brd)))
 
+;; DEFINITION:
+;;   The altitude is the maxumum number of times a valid
+;;   piece can be moved down on a given board.
 
+;; Board Piece -> Board
+;; compute the altitude of a piece
 (define (board-altitude brd p)
   (define pp (piece-down p))
   (if (not (board-piece? brd pp)) 0
@@ -567,56 +588,50 @@
 ;; Routines
 ;;-----------
 
+;; Board Piece -> Boolean
+;; check if a piece collides with other blocks on a board
 (define (board-piece-collision? brd p)
   (define bs (piece->visible-blocks p))
   (board-block-collision*? brd bs))
 
-
+;; Board [List-of Block] -> Boolean
+;; check if a set of blocks collide with other blocks on a board
 (define (board-block-collision*? brd bs)
   (ormap (lambda (b) (board-block-collision? brd b)) bs))
 
-
+;; Board Block -> Boolean
+;; check if a block collides with other blocks on a board
 (define (board-block-collision? brd b)
   (board-taken? brd (block-x b) (block-y b)))
 
-
+;; Board [List-of Block] ID -> Board
+;; land a set of blocks on a board as blocks of a given ID
 (define (board-land-block* brd bs id)
   (for ([b bs]) (board-land-block brd b id))
   brd)
 
-
+;; Board Block ID -> Board
+;; land a block on a board as a block of a given ID
 (define (board-land-block brd b id)
   (define row (list-ref brd (block-y b)))
   (row-set row (block-x b) id))
 
-
+;; Board Number Number -> Boolean
+;; check if a board entry is taken
 (define (board-taken? brd x y)
   (define e (board-get brd x y))
   (entry-taken? e))
 
-
+;; Board Number Number -> ID|#f
+;; get a board entry
 (define (board-get brd x y)
   (rows-entry brd x y))
 
-
+;; Board Number Number ID -> Void
+;; set a board entry
 (define (board-set brd x y id)
   (define row (list-ref brd y))
   (row-set row x id))
-
-
-
-
-
-
-
-
-;; NOTE: a very strong layer of abstraction, from now on we
-;;       use only this API and don't use the code above at all
-
-
-
-
-
 
 
 ;;=======================================
@@ -683,9 +698,9 @@
   g3)
 
 
-;;----------;;
-;; Routines ;;
-;;----------;;
+;;-----------
+;; Routines
+;;-----------
 
 (define (game-down g s)
   (if (game-move-down? g) (game-score+ (game-move-down g) s)
