@@ -79,6 +79,9 @@
 (check-equal? (piece->blocks (piece 0 2 3 5)) (list (b 3 6) (b 4 6) (b 5 6) (b 4 7)))
 (check-equal? (piece->blocks (piece 1 0 3 5)) (list (b 3 5) (b 4 5) (b 3 6) (b 4 6)))
 
+(check-equal? (piece->visible-blocks (piece 3 1 1 0)) (list (b 2 0) (b 2 1) (b 2 2) (b 1 2)))
+(check-equal? (piece->visible-blocks (piece 3 1 -1 -2)) (list (b 0 0)))
+
 (check-equal? (piece-width 0 0) 3)
 (check-equal? (piece-width 0 1) 2)
 (check-equal? (piece-width 1 0) 2)
@@ -95,19 +98,13 @@
 (check-equal? (piece-height 5 0) 2)
 (check-equal? (piece-height 5 1) 3)
 
+(check-equal? (piece-start-x 0) 1)
+(check-equal? (piece-start-x 2) 0)
+(check-equal? (piece-start-x 6) 1)
 
-
-
-
-
-
-;(define (piece-height p)
-;  (define raw-bs (piece->blocks p))
-;  (define bs (shift-top-left raw-bs))
-;  (add1 (max-y bs)))
-
-
-
+(check-equal? (piece-start-y 0) -2)
+(check-equal? (piece-start-y 2) -1)
+(check-equal? (piece-start-y 6) -2)
 
 
 ;;=======================================

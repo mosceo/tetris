@@ -356,7 +356,7 @@
 ;; Piece -> [List-of Block]
 ;; convert a piece to a list of blocks
 (define (piece->blocks p)
-  (define raw-bs (piece->raw-blocks p))
+  (define raw-bs (global-piece-blocks (piece-id p) (piece-type p)))
   (block-shift* raw-bs (piece-x p) (piece-y p)))
 
 ;; Piece -> [List-of Block]
@@ -388,15 +388,14 @@
 ;; Routines
 ;;
 
-(define (piece->raw-blocks p)
-  (global-piece-blocks (piece-id p) (piece-type p)))
-
-
+;; Number -> Number
+;; compute the initial x-coordinate for a piece
 (define (piece-start-x id)
   (define w (piece-width id 0))
   (quotient (- W w) 2))
 
-
+;; Number -> Number
+;; compute the initial y-coordinate for a piece
 (define (piece-start-y id)
   (define h (piece-height id 0))
   (- h))
