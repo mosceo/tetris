@@ -452,12 +452,6 @@
 ;;=======================================
 ;; Row
 ;;=======================================
-
-(define-struct row [count entries] #:mutable #:transparent)
-
-
-;; Example: (row 2 (list (ef) (e 0) (e 1) (ef) (ef)))
-
 ;;
 ;; API:
 ;;
@@ -465,47 +459,70 @@
 ;; rows-new
 ;; rows-entry
 ;; rows-remove-full
+;; rows-replenish
 ;;
 
+;; An Row is a structure:
+;;   (make-row Number [List-of Entry])
+;; represents a row of cells in a board,
+;;   the number says how many cells contain blocks
+;;
+;; Ex.: (make-row 2 (list (e #f) (e 1) (e #f) (e #f) (e 2)))
+;;
+(define-struct row [count entries] #:mutable #:transparent)
+
+
+;; Row Index ID -> Void
+;; make a certain entry in a row taken by a block with a given ID
 (define (row-set r x id)
   (define new-count (add1 (row-count r)))
   (define entry (list-ref (row-entries r) x))
   (entry-set entry id)
   (set-row-count! r new-count))
 
-
+;; Number -> [List-of Row]
+;; create a list of rows
 (define (rows-new n)
   (for/list ([i n]) (row-new)))
 
-
+;; [List-of Row] Number Number
+;; get an entry with given coordinates
+;; (as if a list of rows was a matirx)
 (define (rows-entry rs x y)
   (define r (list-ref rs y))
   (list-ref (row-entries r) x))
 
-
+;; [List-of Row] -> [List-of Row]
+;; remove all full rows
 (define (rows-remove-full rs)
   (filter row-not-full? rs))
 
-
-;;---------------------
-;; Lower-level routines
-;;---------------------
-
-(define (row-new)
-  (row 0 (for/list ([i W]) (ef))))
-
-
-(define (row-full? r)
-  (= (row-count r) W))
-
-
-(define (row-not-full? row)
-  (not (row-full? row)))
-
-
+;; [List-of Row] -> [List-of Row]
+;; add free rows to the top of the list until its size
+;; is equal the height of a board (global constant)
 (define (rows-replenish rs)
   (define lack (- H (length rs)))
   (append (rows-new lack) rs))
+
+
+;;-----------
+;; Routines
+;;-----------
+
+;; Number -> Row
+;; create an empty row
+(define (row-new)
+  (row 0 (for/list ([i W]) (ef))))
+
+;; Row -> Boolean
+;; check if a row has no free cells
+(define (row-full? r)
+  (= (row-count r) W))
+
+;; Row -> Boolean
+;; check if a row has a free cell
+(define (row-not-full? row)
+  (not (row-full? row)))
 
 
 ;;=======================================
@@ -546,9 +563,9 @@
       (add1 (board-altitude brd pp))))
 
 
-;;
-;; Lower-level routines
-;;
+;;-----------
+;; Routines
+;;-----------
 
 (define (board-piece-collision? brd p)
   (define bs (piece->visible-blocks p))
@@ -587,6 +604,21 @@
   (row-set row x id))
 
 
+
+
+
+
+
+
+;; NOTE: a very strong layer of abstraction, from now on we
+;;       use only this API and don't use the code above at all
+
+
+
+
+
+
+
 ;;=======================================
 ;; Game
 ;;=======================================
@@ -594,9 +626,6 @@
 (define-struct game [board piece next-piece
                      score active?])
 
-
-;; NOTE: a very strong layer of abstraction, from now on we
-;;       use only this API and don't use the code above at all
 
 
 ;;------;;
