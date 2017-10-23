@@ -164,6 +164,8 @@
 ;; Board
 ;;=======================================
 
+;; Number [List-of ID|#f] -> Row
+;; a shorthand to create a row
 (define (cr count vals)
   (row count (map (lambda (val) (entry val)) vals)))
 
@@ -219,7 +221,13 @@
         (define b2 (board-land b1 (piece 0 1 2 2)))]
   (check-equal? b2 board-ex-2))
 
-;; board-remove-full will be implicitely tested while testing board-land
+;; board-remove-full is implicitely tested while testing board-land
+
+(check-equal? (board-altitude board-ex-2 (piece 0 3 3 0)) 0)
+(check-equal? (board-altitude board-ex-2 (piece 0 3 2 0)) 1)
+(check-equal? (board-altitude board-ex-2 (piece 0 3 1 -2)) 4)
+(check-equal? (board-altitude board-ex-2 (piece 3 0 1 -1)) 2)
+(check-equal? (board-altitude board-ex-2 (piece 3 0 0 -1)) 3)
 
 (check-false (board-piece-collision? board-ex-1 (piece 0 1 2 2)))
 (check-true (board-piece-collision? board-ex-1 (piece 0 1 2 3)))
@@ -259,23 +267,6 @@
                          (cr 2 (list 0 F 0))))]
   (board-set b1 2 1 0)
   (check-equal? b1 b2))
-
-
-
-
-;; □ □ □ □ □
-;; □ □ □ □ □
-;; □ □ □ □ □
-;; □ □ □ □ ■
-;; ■ ■ □ ■ ■
-;; □ ■ □ □ □
-
-
-(check-equal? (board-altitude board-ex-2 (piece 0 3 3 0)) 0)
-(check-equal? (board-altitude board-ex-2 (piece 0 3 2 0)) 1)
-(check-equal? (board-altitude board-ex-2 (piece 0 3 1 -2)) 4)
-(check-equal? (board-altitude board-ex-2 (piece 3 0 1 -1)) 2)
-(check-equal? (board-altitude board-ex-2 (piece 3 0 0 -1)) 3)
 
 
 ;;=======================================

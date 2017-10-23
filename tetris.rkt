@@ -32,6 +32,10 @@
 
 (define PIX 30)       ;; block size (pixels)
 
+(define INIT-THRESHOLD 15)
+(define INIT-LEVEL-TICKS 100)
+(define RATE (/ 1 20))
+
 
 ;;=======================================
 ;; Helpers
@@ -634,6 +638,15 @@
   (row-set row x id))
 
 
+
+
+;; ■ ■ ■
+;; ■ ■ ■
+;; ■ ■ ■
+
+
+
+
 ;;=======================================
 ;; Game
 ;;=======================================
@@ -747,15 +760,6 @@
 
 
 ;;=======================================
-;; Constants
-;;=======================================
-
-(define INIT-THRESHOLD 15)
-(define INIT-LEVEL-TICKS 100)
-(define RATE (/ 1 20))
-
-
-;;=======================================
 ;; Window
 ;;=======================================
 
@@ -764,10 +768,6 @@
 
 (define (window-new)
   (window (game-new) 1 0 INIT-THRESHOLD 1))
-
-
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 (define (window-tick w)
@@ -798,10 +798,6 @@
       (set! lv (add1 lv)))
 
   (struct-copy window w [cnt cn] [cnt-act ca] [th th] [level lv]))
-
-
-;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
@@ -848,15 +844,13 @@
   (game-over? (window-game w)))
 
 
-;;=======================================
-;; Big-bang
-;;=======================================
 
-(define (start-game)
-  (big-bang (window-new)
-            [on-tick window-tick RATE]
-            [on-key  window-key]
-            [to-draw window-draw]))
+
+;; ■ ■ ■
+;; ■ ■ ■
+;; ■ ■ ■
+
+
 
 
 ;;=======================================
@@ -932,10 +926,6 @@
 ;; Drawing Window
 ;;=======================================
 
-
-
-
-
 (define GAME-OVER-TEXT (above (text "Press \"space\"" 18 "black")
                               (text "to start a new game" 18 "black")))
 
@@ -971,6 +961,26 @@
   (define str (string-append "Level " (number->string n)))
   (define txt (text str 20 "black"))
   (overlay txt rect))
+
+
+
+
+;; ■ ■ ■
+;; ■ ■ ■
+;; ■ ■ ■
+
+
+
+
+;;=======================================
+;; Big-bang
+;;=======================================
+
+(define (start-game)
+  (big-bang (window-new)
+            [on-tick window-tick RATE]
+            [on-key  window-key]
+            [to-draw window-draw]))
 
 
 ;;=======================================
