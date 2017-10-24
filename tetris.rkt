@@ -22,18 +22,19 @@
 ;; Global constants
 ;;=======================================
 
-;; FOR TESTING
+;; FOR UNIT TESTS
 ;(define W 5)
 ;(define H 6)
 
+;; FOR PLAYING
 (define W 10)         ;; board width  (# of blocks)
 (define H 22)         ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 
-(define INIT-THRESHOLD 15)
-(define INIT-LEVEL-TICKS 100)
-(define RATE (/ 1 20))
+(define INIT-THRESHOLD 15)        ;; initial speed of blocks
+(define INIT-LEVEL-TICKS 1000)    ;; how fast speed changes
+(define RATE (/ 1 20))            ;; how much time one tick takes
 
 
 ;;=======================================
@@ -638,15 +639,6 @@
   (row-set row x id))
 
 
-
-
-;; ■ ■ ■
-;; ■ ■ ■
-;; ■ ■ ■
-
-
-
-
 ;;=======================================
 ;; Game
 ;;=======================================
@@ -814,14 +806,13 @@
 ;;
 ;; Ex.: (window (game-new) 1 0 INIT-THRESHOLD 1)
 ;;
-
-(define-struct window [game cnt cnt-act th level     board-image])
+(define-struct window [game cnt cnt-act th level board-image])
 
 
 ;; Void -> Window
 ;; create a window for a new game
 (define (window-new)
-  (window (game-new) 1 0 INIT-THRESHOLD 1     (background-image)))
+  (window (game-new) 1 0 INIT-THRESHOLD 1 (background-image)))
 
 ;; Window -> Window
 ;; a global tick changes the state of a window
@@ -932,15 +923,6 @@
             [on-tick window-tick RATE]
             [on-key  window-key]
             [to-draw window-draw]))
-
-
-
-
-;; ■ ■ ■
-;; ■ ■ ■
-;; ■ ■ ■
-
-
 
 
 ;;=======================================
@@ -1059,8 +1041,8 @@
 ;; Run
 ;;=======================================
 
-;; to run tests change W and H constants for testing
-;; of the file and uncomment the following line
+;; to run tests set W and H constants for testing
+;; and uncomment the following line
 ;(include "unittest.rkt")
 
 (start-game)
