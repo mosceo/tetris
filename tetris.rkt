@@ -830,15 +830,7 @@
         [else
          (define w1 (window-update-counters w))
          (cond [(not (window-action? w1)) w1]
-               [else
-                (define g1 (window-game w1))
-                (define g2 (game-down-tick g1))
-                (define bi1 (window-board-image w1))
-                (define bi2 (cond [(game-landed? g1 g2) (board->image (game-board g2))]
-                                  [else bi1]))
-                (struct-copy window w1 [game g2] [board-image bi2])])]))
-
-
+               [else (window-change-state w1 game-down-tick)])]))
                 
 ;; Window KeyEvent -> Window
 ;; handle a big-bang's key event
@@ -862,6 +854,17 @@
 ;; Routines ;;
 ;;----------;;
 
+;; Window Func -> Window
+;; change the state of the game object and if a piece lands,
+;; change the saved board image
+(define (window-change-state w fn)
+  (define g1 (window-game w))
+  (define g2 (fn g1))
+  (define bi1 (window-board-image w))
+  (define bi2 (cond [(game-landed? g1 g2) (board->image (game-board g2))]
+                    [else bi1]))
+  (struct-copy window w [game g2] [board-image bi2]))
+
 ;; Window -> Window
 ;; the 'left' key has been pressed
 (define (window-key-left w)
@@ -880,12 +883,7 @@
 ;; Window -> Window
 ;; the 'down' key has been pressed
 (define (window-key-down w)
-  (define g1 (window-game w))
-  (define g2 (game-down-key g1))
-  (define bi1 (window-board-image w))
-  (define bi2 (cond [(game-landed? g1 g2) (board->image (game-board g2))]
-                    [else bi1]))
-  (struct-copy window w [game g2] [board-image bi2]))
+  (window-change-state w game-down-key))
 
 ;; Window -> Window
 ;; the 'space' key has been pressed
