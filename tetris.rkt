@@ -22,12 +22,12 @@
 ;; Global constants
 ;;=======================================
 
-;; for testing
+;; FOR TESTING
 ;(define W 5)
 ;(define H 6)
 
-(define W 10)          ;; board width (# of blocks)
-(define H 22)          ;; board height (# of blocks)
+(define W 10)         ;; board width  (# of blocks)
+(define H 22)         ;; board height (# of blocks)
 
 (define PIX 30)       ;; block size (pixels)
 
@@ -850,9 +850,9 @@
   (image-render-window w))
 
 
-;;----------;;
-;; Routines ;;
-;;----------;;
+;;-----------
+;; Routines
+;;-----------
 
 ;; Window Func -> Window
 ;; change the state of the game object and if a piece lands,
@@ -947,13 +947,8 @@
 ;; Drawing images
 ;;=======================================
 
-(define (image-borpic g)
-  (define p (game-piece g))
-  (define brd (game-board g))
-  (define brd-image (board->image brd))
-  (image-piece/scene p brd-image))
-
-
+;; Void -> Image
+;; render the background for a board (an empty board looks like this)
 (define (background-image)
   (define col1 (rectangle PIX (* PIX H) "solid" "LightGoldenrodYellow"))
   (define col2 (rectangle PIX (* PIX H) "solid" "PaleGoldenrod"))
@@ -962,32 +957,39 @@
 
 (define BACKGROUND (background-image))
 
+;; Color -> Image
+;; render one block
 (define (image-block color)
   (define outline (square PIX 'outline "black"))
   (define sq (square PIX "solid" color))
   (overlay outline sq))
 
-
+;; Image Number Number Image
+;; put an image on a scene
 (define (image-image/scene im x y scene)
   (underlay/xy scene (* x PIX) (* y PIX) im))
 
-
+;; Number Number ID Image -> Image
+;; draw a block on a scene
 (define (image-block/scene x y id scene)
   (define color (global-piece-color id))
   (define b-im (image-block color))
   (image-image/scene b-im x y scene))
 
-
+;; [List-of Block] ID Image -> Image
+;; draw a set of blocks on a scene
 (define (image-block*/scene bs id scene)
   (foldl (lambda (b im) (image-block/scene (block-x b) (block-y b) id im))
          scene bs))
 
-
+;; Piece Image -> Image
+;; draw a piece on a scene
 (define (image-piece/scene p scene)
   (define bs (piece->visible-blocks p))
   (image-block*/scene bs (piece-id p) scene))
 
-
+;; Board -> Image
+;; draw a board
 (define (board->image brd)
   (define im BACKGROUND)
   (define (row->image es y)
@@ -998,7 +1000,8 @@
     (row->image (row-entries row) y))
   im)
 
-
+;; ID Number -> Image
+;; render a piece to be shown as the next piece
 (define (image-next-piece id type)
   (define raw-bs (global-piece-blocks id type))
   (define bs (shift-top-left raw-bs))
@@ -1015,39 +1018,36 @@
 (define GAME-OVER-TEXT (above (text "Press \"space\"" 18 "black")
                               (text "to start a new game" 18 "black")))
 
-
-
-;(define (image-render-window w)
-;  (define rpanel (image-rpanel w))
-;  (define borpic (image-borpic (window-game w)))
-;  (beside/align "top" borpic rpanel))
-
+;; Window -> Image
+;; render a window
 (define (image-render-window w)
   (define rpanel (image-rpanel w))
   (define borpic (image-piece/scene (game-piece (window-game w))
                                     (window-board-image w)))
   (beside/align "top" borpic rpanel))
 
-
+;; Window -> Image
+;; render the right panel
 (define (image-rpanel w)
   (define g (window-game w))
   (define np (game-next-piece g))
   (define score (image-score (game-score g)))
   (define level (image-level (window-level w)))
   (define next-piece (image-next-piece (piece-id np) (piece-type np)))
-
   (define p_ (rectangle 1 40 "solid" "transparent"))
-  
   (if (window-stopped? w)
       (above score level p_ next-piece p_ GAME-OVER-TEXT)
       (above score level p_ next-piece)))
 
+;; Number -> Image
+;; render a score
 (define (image-score sc)
   (define rect (rectangle 200 100 'solid "WhiteSmoke"))
   (define txt (text (number->string sc) 30 "black"))
   (overlay txt rect))
 
-
+;; Number -> Image
+;; render a level
 (define (image-level n)
   (define rect (rectangle 200 50 'solid "LightGray"))
   (define str (string-append "Level " (number->string n)))
@@ -1059,8 +1059,8 @@
 ;; Run
 ;;=======================================
 
-;; uncomment W and H definitions for testing in the beginning of the file
-;; and uncomment the following line to run tests
+;; to run tests change W and H constants for testing
+;; of the file and uncomment the following line
 ;(include "unittest.rkt")
 
 (start-game)
