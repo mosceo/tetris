@@ -657,6 +657,8 @@
 ;; game-active?
 ;; game-over?
 ;; game-score
+;; game-landed?
+;; game-piece-onland
 ;;
 ;; game-left
 ;; game-right
@@ -674,18 +676,30 @@
 ;; Ex.: (game (board-new) (piece-new) (piece-new) 0 #t)
 ;;
 (define-struct game [board piece next-piece
-                     score active?])
+                     score active? land-cnt])
 
 
 ;; Void -> Game
 ;; create an initial state of a game
 (define (game-new)
-  (game (board-new) (piece-new) (piece-new) 0 #t))
+  (game (board-new) (piece-new) (piece-new) 0 #t 0))
 
 ;; Game -> Boolean
 ;; check if a game has finished
 (define (game-over? g)
   (not (game-active? g)))
+
+;; Game Game -> Boolean
+;; given two consecutive states of a game, decide if a piece has landed
+(define (game-landed? g1 g2)
+  (not (= (game-land-cnt g1) (game-land-cnt g2))))
+
+;; Game -> Piece
+;; get the piece in the state of after it has landed
+(define (game-piece-onland g)
+  (define alt (board-altitude (game-board g) (game-piece g)))
+  (display alt)
+  (piece-down-n (game-piece g) alt))
 
 ;; Game -> Game
 ;; perform a left move
@@ -754,7 +768,8 @@
   (struct-copy game g
                [board (board-land (game-board g) (game-piece g))]
                [piece (game-next-piece g)]
-               [next-piece (piece-new)]))
+               [next-piece (piece-new)]
+               [land-cnt (add1 (game-land-cnt g))]))
 
 ;; Game Number -> Game
 ;; increment the score in a game
@@ -793,20 +808,20 @@
 ;;
 
 ;; A Window is a structure:
-;;   (window Game Number Number Number Number)
+;;   (window Game Number Number Number Number Image)
 ;; represents the highest-level state of a game of tetris, contains the current level
 ;;   and additional data that is needed to control the speed of the game
 ;;
 ;; Ex.: (window (game-new) 1 0 INIT-THRESHOLD 1)
 ;;
 
-(define-struct window [game cnt cnt-act th level])
+(define-struct window [game cnt cnt-act th level     board-image])
 
 
 ;; Void -> Window
 ;; create a window for a new game
 (define (window-new)
-  (window (game-new) 1 0 INIT-THRESHOLD 1))
+  (window (game-new) 1 0 INIT-THRESHOLD 1     (background-image)))
 
 ;; Window -> Window
 ;; a global tick changes the state of a window
@@ -814,9 +829,17 @@
   (cond [(window-stopped? w) w]
         [else
          (define w1 (window-update-counters w))
-         (if (window-action? w1)
-             (struct-copy window w1 [game (game-down-tick (window-game w1))]) w1)]))
+         (cond [(not (window-action? w1)) w1]
+               [else
+                (define g1 (window-game w1))
+                (define g2 (game-down-tick g1))
+                (define bi1 (window-board-image w1))
+                (define bi2 (cond [(game-landed? g1 g2) (board->image (game-board g2))]
+                                  [else bi1]))
+                (struct-copy window w1 [game g2] [board-image bi2])])]))
 
+
+                
 ;; Window KeyEvent -> Window
 ;; handle a big-bang's key event
 (define (window-key w k)
@@ -857,12 +880,18 @@
 ;; Window -> Window
 ;; the 'down' key has been pressed
 (define (window-key-down w)
-  (struct-copy window w [game (game-down-key (window-game w))]))
+  (define g1 (window-game w))
+  (define g2 (game-down-key g1))
+  (define bi1 (window-board-image w))
+  (define bi2 (cond [(game-landed? g1 g2) (board->image (game-board g2))]
+                    [else bi1]))
+  (struct-copy window w [game g2] [board-image bi2]))
 
 ;; Window -> Window
 ;; the 'space' key has been pressed
 (define (window-key-space w)
-  (struct-copy window w [game (game-fall (window-game w))]))
+  (define g (game-fall (window-game w)))
+  (struct-copy window w [game g] [board-image (board->image (game-board g))]))
 
 ;; Window -> Boolean
 ;; check if a game has finished
@@ -933,9 +962,7 @@
   (define cols (build-list W (lambda (n) (if (= (modulo n 2) 0) col1 col2))))
   (apply beside cols))
 
-
 (define BACKGROUND (background-image))
-
 
 (define (image-block color)
   (define outline (square PIX 'outline "black"))
@@ -983,8 +1010,6 @@
   (image-block*/scene bs id scene))
 
 
-
-
 ;;=======================================
 ;; Drawing Window
 ;;=======================================
@@ -994,9 +1019,15 @@
 
 
 
+;(define (image-render-window w)
+;  (define rpanel (image-rpanel w))
+;  (define borpic (image-borpic (window-game w)))
+;  (beside/align "top" borpic rpanel))
+
 (define (image-render-window w)
   (define rpanel (image-rpanel w))
-  (define borpic (image-borpic (window-game w)))
+  (define borpic (image-piece/scene (game-piece (window-game w))
+                                    (window-board-image w)))
   (beside/align "top" borpic rpanel))
 
 
