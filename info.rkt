@@ -1,3 +1,3 @@
 ;; info.rkt
 #lang info
-(define collection "tetris-color")
+(define collection "tetris")
