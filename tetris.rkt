@@ -12,11 +12,12 @@
 ;;
 ;;===========================================
 
-#lang racket
+#lang racket/base
 
-(require 2htdp/image)
-(require 2htdp/universe)
+(require 2htdp/image
+         2htdp/universe)
 
+(provide (all-defined-out))
 
 ;;=======================================
 ;; Global constants
@@ -786,7 +787,6 @@
   (if (board-piece? (game-board g) new-p)
       (struct-copy game g [piece new-p]) g))
 
-
 ;;=======================================
 ;; Window
 ;;=======================================
@@ -1045,4 +1045,5 @@
 ;; and uncomment the following line
 ;(include "unittest.rkt")
 
-(start-game)
+(module+ main
+  (void (start-game)))
