@@ -1035,15 +1035,3 @@
   (define str (string-append "Level " (number->string n)))
   (define txt (text str 20 "black"))
   (overlay txt rect))
-
-
-;;=======================================
-;; Run
-;;=======================================
-
-;; to run tests set W and H constants for testing
-;; and uncomment the following line
-;(include "unittest.rkt")
-
-(module+ main
-  (void (start-game)))
