@@ -1,4 +1,8 @@
-(require rackunit)
+#lang racket/base
+
+(require rackunit
+         racket/local
+         "tetris.rkt")
 
 ;;=======================================
 ;; Helpers

@@ -12,11 +12,12 @@
 ;;
 ;;===========================================
 
-#lang racket
+#lang racket/base
 
-(require 2htdp/image)
-(require 2htdp/universe)
+(require 2htdp/image
+         2htdp/universe)
 
+(provide (all-defined-out))
 
 ;;=======================================
 ;; Global constants
@@ -786,7 +787,6 @@
   (if (board-piece? (game-board g) new-p)
       (struct-copy game g [piece new-p]) g))
 
-
 ;;=======================================
 ;; Window
 ;;=======================================
@@ -1035,14 +1035,3 @@
   (define str (string-append "Level " (number->string n)))
   (define txt (text str 20 "black"))
   (overlay txt rect))
-
-
-;;=======================================
-;; Run
-;;=======================================
-
-;; to run tests set W and H constants for testing
-;; and uncomment the following line
-;(include "unittest.rkt")
-
-(start-game)
