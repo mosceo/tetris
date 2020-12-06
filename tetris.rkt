@@ -23,10 +23,6 @@
 ;; Global constants
 ;;=======================================
 
-;; FOR UNIT TESTS
-;(define W 5)
-;(define H 6)
-
 ;; FOR PLAYING
 (define W 10)         ;; board width  (# of blocks)
 (define H 22)         ;; board height (# of blocks)
