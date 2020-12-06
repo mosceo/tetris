@@ -37,6 +37,13 @@
 (define INIT-LEVEL-TICKS 1000)    ;; how fast speed changes
 (define RATE (/ 1 20))            ;; how much time one tick takes
 
+(define (set-W! new-W)
+  (set! W new-W))
+
+(define (set-H! new-H)
+  (set! H new-H))
+
+
 
 ;;=======================================
 ;; Helpers
